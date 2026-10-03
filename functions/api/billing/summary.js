@@ -79,6 +79,174 @@ function providerConfig(env, prefix) {
   };
 }
 
+function parseHeaders(headersJson) {
+  let headers = { 'accept': 'application/json' };
+  if (!headersJson) return headers;
+  headers = { ...headers, ...JSON.parse(headersJson) };
+  return headers;
+}
+
+function currentMonthStartUnix() {
+  const now = new Date();
+  return Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0) / 1000);
+}
+
+function openAiAmount(result) {
+  if (!result || typeof result !== 'object') return null;
+  const direct = asNumber(result?.amount?.value);
+  if (direct !== null) return direct;
+  return asNumber(result?.amount);
+}
+
+function openAiCurrency(result, fallback = 'USD') {
+  const currency = result?.amount?.currency || result?.currency || fallback;
+  return String(currency || 'USD').trim().toUpperCase();
+}
+
+async function queryOpenAI(env) {
+  const cfg = providerConfig(env, 'OPENAI');
+
+  if (!cfg.headersJson) {
+    return {
+      ok: false,
+      configured: false,
+      provider: 'OpenAI',
+      balance: null,
+      spent: null,
+      limit: cfg.staticLimit,
+      currency: cfg.defaultCurrency || 'USD',
+      updated_at: null,
+      message: 'Chave administrativa da OpenAI ainda não configurada no Cloudflare.'
+    };
+  }
+
+  let headers;
+  try {
+    headers = parseHeaders(cfg.headersJson);
+  } catch {
+    return {
+      ok: false,
+      configured: true,
+      provider: 'OpenAI',
+      balance: null,
+      spent: null,
+      limit: cfg.staticLimit,
+      currency: cfg.defaultCurrency || 'USD',
+      updated_at: null,
+      message: 'Configuração de headers inválida para OpenAI.'
+    };
+  }
+
+  const baseUrl = cfg.url || 'https://api.openai.com/v1/organization/costs';
+  const startTime = currentMonthStartUnix();
+  let nextPage = null;
+  let spent = 0;
+  let currency = String(cfg.defaultCurrency || 'USD').toUpperCase();
+  let pagesRead = 0;
+  const seenPages = new Set();
+
+  try {
+    do {
+      const url = new URL(baseUrl);
+      url.searchParams.set('start_time', String(startTime));
+      if (nextPage) url.searchParams.set('page', nextPage);
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers,
+        cf: { cacheTtl: 0, cacheEverything: false }
+      });
+
+      const raw = await response.text();
+      let payload = null;
+      try { payload = raw ? JSON.parse(raw) : {}; }
+      catch {
+        return {
+          ok: false,
+          configured: true,
+          provider: 'OpenAI',
+          balance: null,
+          spent: null,
+          limit: cfg.staticLimit,
+          currency,
+          updated_at: new Date().toISOString(),
+          message: `OpenAI respondeu em formato não JSON (HTTP ${response.status}).`
+        };
+      }
+
+      if (!response.ok) {
+        const providerMessage = payload?.error?.message || payload?.message || `HTTP ${response.status}`;
+        return {
+          ok: false,
+          configured: true,
+          provider: 'OpenAI',
+          balance: null,
+          spent: null,
+          limit: cfg.staticLimit,
+          currency,
+          updated_at: new Date().toISOString(),
+          message: `OpenAI: ${providerMessage}`
+        };
+      }
+
+      const buckets = Array.isArray(payload?.data) ? payload.data : [];
+      for (const bucket of buckets) {
+        const results = Array.isArray(bucket?.results) ? bucket.results : [];
+        for (const result of results) {
+          const value = openAiAmount(result);
+          if (value !== null) spent += value;
+          currency = openAiCurrency(result, currency);
+        }
+      }
+
+      pagesRead += 1;
+      const candidate = payload?.has_more && payload?.next_page
+        ? String(payload.next_page)
+        : null;
+
+      if (!candidate || seenPages.has(candidate) || pagesRead >= 100) {
+        nextPage = null;
+      } else {
+        seenPages.add(candidate);
+        nextPage = candidate;
+      }
+    } while (nextPage);
+
+    let balance = null;
+    const limit = cfg.staticLimit;
+    if (cfg.calculateBalance && limit !== null) {
+      balance = Math.max(limit - spent, 0);
+    }
+
+    return {
+      ok: true,
+      configured: true,
+      provider: 'OpenAI',
+      balance,
+      spent,
+      limit,
+      currency,
+      account_label: 'Organização OpenAI',
+      updated_at: new Date().toISOString(),
+      message: balance === null
+        ? 'Gasto real do mês atual obtido pela API oficial de Costs. O saldo/crédito restante não é retornado por este endpoint.'
+        : 'Gasto real do mês atual obtido pela API oficial de Costs. O saldo exibido é calculado a partir do limite configurado.'
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      configured: true,
+      provider: 'OpenAI',
+      balance: null,
+      spent: null,
+      limit: cfg.staticLimit,
+      currency,
+      updated_at: new Date().toISOString(),
+      message: `OpenAI: ${error?.message || 'Falha ao consultar custos.'}`
+    };
+  }
+}
+
 async function queryProvider(env, prefix, label) {
   const cfg = providerConfig(env, prefix);
 
@@ -96,23 +264,21 @@ async function queryProvider(env, prefix, label) {
     };
   }
 
-  let headers = { 'accept': 'application/json' };
-  if (cfg.headersJson) {
-    try {
-      headers = { ...headers, ...JSON.parse(cfg.headersJson) };
-    } catch {
-      return {
-        ok: false,
-        configured: true,
-        provider: label,
-        balance: null,
-        spent: null,
-        limit: cfg.staticLimit,
-        currency: cfg.defaultCurrency,
-        updated_at: null,
-        message: `Configuração de headers inválida para ${label}.`
-      };
-    }
+  let headers;
+  try {
+    headers = parseHeaders(cfg.headersJson);
+  } catch {
+    return {
+      ok: false,
+      configured: true,
+      provider: label,
+      balance: null,
+      spent: null,
+      limit: cfg.staticLimit,
+      currency: cfg.defaultCurrency,
+      updated_at: null,
+      message: `Configuração de headers inválida para ${label}.`
+    };
   }
 
   try {
@@ -201,7 +367,7 @@ export async function onRequestGet({ request, env }) {
   if (!auth.ok) return json({ ok: false, message: auth.message }, auth.status);
 
   const [openai, google] = await Promise.all([
-    queryProvider(env, 'OPENAI', 'OpenAI'),
+    queryOpenAI(env),
     queryProvider(env, 'GOOGLE', 'Google Cloud')
   ]);
 
