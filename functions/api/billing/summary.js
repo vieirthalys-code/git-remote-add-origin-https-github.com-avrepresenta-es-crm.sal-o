@@ -247,117 +247,164 @@ async function queryOpenAI(env) {
   }
 }
 
-async function queryProvider(env, prefix, label) {
-  const cfg = providerConfig(env, prefix);
+async function getGoogleAccessToken(env) {
+  const clientId = String(env.GOOGLE_OAUTH_CLIENT_ID || '').trim();
+  const clientSecret = String(env.GOOGLE_OAUTH_CLIENT_SECRET || '').trim();
+  const refreshToken = String(env.GOOGLE_OAUTH_REFRESH_TOKEN || '').trim();
 
-  if (!cfg.url) {
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error('OAuth do Google ainda não está completo no Cloudflare.');
+  }
+
+  const body = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    refresh_token: refreshToken,
+    grant_type: 'refresh_token'
+  });
+
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload?.access_token) {
+    throw new Error(payload?.error_description || payload?.error || `Falha OAuth Google (HTTP ${response.status}).`);
+  }
+
+  return payload.access_token;
+}
+
+function validBigQueryTable(value) {
+  const table = String(value || '').trim().replace(/^`|`$/g, '');
+  if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_$-]+$/.test(table)) return null;
+  return table;
+}
+
+function bigQueryRowsToObjects(payload) {
+  const fields = Array.isArray(payload?.schema?.fields) ? payload.schema.fields : [];
+  const rows = Array.isArray(payload?.rows) ? payload.rows : [];
+  return rows.map(row => {
+    const out = {};
+    const values = Array.isArray(row?.f) ? row.f : [];
+    fields.forEach((field, i) => { out[field.name] = values[i]?.v ?? null; });
+    return out;
+  });
+}
+
+async function runBigQuery(env, accessToken, query) {
+  const projectId = String(env.GOOGLE_CLOUD_PROJECT_ID || '').trim();
+  const location = String(env.GOOGLE_BIGQUERY_LOCATION || '').trim();
+  if (!projectId) throw new Error('GOOGLE_CLOUD_PROJECT_ID não configurado.');
+
+  const body = { query, useLegacySql: false, timeoutMs: 20000 };
+  if (location) body.location = location;
+
+  const response = await fetch(`https://bigquery.googleapis.com/bigquery/v2/projects/${encodeURIComponent(projectId)}/queries`, {
+    method: 'POST',
+    headers: {
+      'authorization': `Bearer ${accessToken}`,
+      'content-type': 'application/json',
+      'accept': 'application/json'
+    },
+    body: JSON.stringify(body),
+    cf: { cacheTtl: 0, cacheEverything: false }
+  });
+
+  let payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const msg = payload?.error?.message || `BigQuery HTTP ${response.status}`;
+    throw new Error(msg);
+  }
+
+  if (!payload?.jobComplete && payload?.jobReference?.jobId) {
+    const u = new URL(`https://bigquery.googleapis.com/bigquery/v2/projects/${encodeURIComponent(projectId)}/queries/${encodeURIComponent(payload.jobReference.jobId)}`);
+    u.searchParams.set('timeoutMs', '20000');
+    const jobLocation = payload?.jobReference?.location || location;
+    if (jobLocation) u.searchParams.set('location', jobLocation);
+
+    const poll = await fetch(u.toString(), {
+      headers: {
+        'authorization': `Bearer ${accessToken}`,
+        'accept': 'application/json'
+      },
+      cf: { cacheTtl: 0, cacheEverything: false }
+    });
+    payload = await poll.json().catch(() => ({}));
+    if (!poll.ok) throw new Error(payload?.error?.message || `BigQuery HTTP ${poll.status}`);
+  }
+
+  return payload;
+}
+
+async function queryGoogle(env) {
+  const projectId = String(env.GOOGLE_CLOUD_PROJECT_ID || '').trim();
+  const table = validBigQueryTable(env.GOOGLE_BILLING_TABLE);
+  const hasOAuth = Boolean(
+    String(env.GOOGLE_OAUTH_CLIENT_ID || '').trim() &&
+    String(env.GOOGLE_OAUTH_CLIENT_SECRET || '').trim() &&
+    String(env.GOOGLE_OAUTH_REFRESH_TOKEN || '').trim()
+  );
+
+  if (!projectId || !table || !hasOAuth) {
+    const missing = [];
+    if (!hasOAuth) missing.push('OAuth/refresh token');
+    if (!projectId) missing.push('GOOGLE_CLOUD_PROJECT_ID');
+    if (!table) missing.push('GOOGLE_BILLING_TABLE');
     return {
       ok: false,
       configured: false,
-      provider: label,
+      provider: 'Google Cloud',
       balance: null,
       spent: null,
-      limit: cfg.staticLimit,
-      currency: cfg.defaultCurrency,
+      limit: null,
+      currency: 'USD',
       updated_at: null,
-      message: 'Conector de faturamento ainda não configurado no Cloudflare.'
-    };
-  }
-
-  let headers;
-  try {
-    headers = parseHeaders(cfg.headersJson);
-  } catch {
-    return {
-      ok: false,
-      configured: true,
-      provider: label,
-      balance: null,
-      spent: null,
-      limit: cfg.staticLimit,
-      currency: cfg.defaultCurrency,
-      updated_at: null,
-      message: `Configuração de headers inválida para ${label}.`
+      message: `Conector Google aguardando: ${missing.join(', ')}.`
     };
   }
 
   try {
-    const response = await fetch(cfg.url, {
-      method: 'GET',
-      headers,
-      cf: { cacheTtl: 0, cacheEverything: false }
-    });
+    const accessToken = await getGoogleAccessToken(env);
+    const query = `
+      SELECT
+        COALESCE(SUM(cost), 0) + COALESCE(SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) AS c), 0)), 0) AS spent,
+        ANY_VALUE(currency) AS currency
+      FROM \`${table}\`
+      WHERE usage_start_time >= TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), MONTH)
+    `;
 
-    const raw = await response.text();
-    let payload = null;
-    try { payload = raw ? JSON.parse(raw) : {}; }
-    catch {
-      return {
-        ok: false,
-        configured: true,
-        provider: label,
-        balance: null,
-        spent: null,
-        limit: cfg.staticLimit,
-        currency: cfg.defaultCurrency,
-        updated_at: new Date().toISOString(),
-        message: `${label} respondeu em formato não JSON (HTTP ${response.status}).`
-      };
-    }
-
-    if (!response.ok) {
-      const providerMessage = payload?.error?.message || payload?.message || `HTTP ${response.status}`;
-      return {
-        ok: false,
-        configured: true,
-        provider: label,
-        balance: null,
-        spent: null,
-        limit: cfg.staticLimit,
-        currency: cfg.defaultCurrency,
-        updated_at: new Date().toISOString(),
-        message: `${label}: ${providerMessage}`
-      };
-    }
-
-    let balance = asNumber(getByPath(payload, cfg.balancePath));
-    const spent = asNumber(getByPath(payload, cfg.spentPath));
-    const mappedLimit = asNumber(getByPath(payload, cfg.limitPath));
-    const limit = mappedLimit ?? cfg.staticLimit;
-    const currency = String(getByPath(payload, cfg.currencyPath) || cfg.defaultCurrency || 'USD');
-    const accountLabel = getByPath(payload, cfg.accountPath);
-
-    if (balance === null && cfg.calculateBalance && limit !== null && spent !== null) {
-      balance = Math.max(limit - spent, 0);
-    }
-
-    const hasFinancialValue = [balance, spent, limit].some(v => v !== null);
+    const payload = await runBigQuery(env, accessToken, query);
+    const rows = bigQueryRowsToObjects(payload);
+    const first = rows[0] || {};
+    const spent = asNumber(first.spent) ?? 0;
+    const currency = String(first.currency || env.GOOGLE_DEFAULT_CURRENCY || 'USD').trim().toUpperCase();
 
     return {
-      ok: hasFinancialValue,
+      ok: true,
       configured: true,
-      provider: label,
-      balance,
+      provider: 'Google Cloud',
+      balance: null,
       spent,
-      limit,
+      limit: null,
       currency,
-      account_label: accountLabel ? String(accountLabel) : undefined,
+      account_label: projectId,
       updated_at: new Date().toISOString(),
-      message: hasFinancialValue
-        ? 'Dados obtidos da conta de faturamento.'
-        : 'A conexão respondeu, mas os caminhos de saldo/gasto/limite ainda precisam ser mapeados.'
+      message: 'Gasto líquido do mês atual obtido do Cloud Billing Export no BigQuery. O saldo/crédito promocional restante não é calculado por esta consulta.'
     };
   } catch (error) {
     return {
       ok: false,
       configured: true,
-      provider: label,
+      provider: 'Google Cloud',
       balance: null,
       spent: null,
-      limit: cfg.staticLimit,
-      currency: cfg.defaultCurrency,
+      limit: null,
+      currency: String(env.GOOGLE_DEFAULT_CURRENCY || 'USD').trim().toUpperCase(),
       updated_at: new Date().toISOString(),
-      message: `${label}: ${error?.message || 'Falha ao consultar faturamento.'}`
+      message: `Google Cloud: ${error?.message || 'Falha ao consultar faturamento.'}`
     };
   }
 }
@@ -368,7 +415,7 @@ export async function onRequestGet({ request, env }) {
 
   const [openai, google] = await Promise.all([
     queryOpenAI(env),
-    queryProvider(env, 'GOOGLE', 'Google Cloud')
+    queryGoogle(env)
   ]);
 
   return json({
