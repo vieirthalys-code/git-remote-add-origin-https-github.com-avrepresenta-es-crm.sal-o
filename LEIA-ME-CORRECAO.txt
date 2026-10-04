@@ -1,0 +1,30 @@
+ADMIN SAAS AV — RESPONSIVO + DADOS RESTAURADOS
+
+Esta versão foi montada para NÃO mexer no funcionamento que já estava carregando:
+- empresas;
+- dados do CRM;
+- OpenAI / Google Cloud;
+- prompt por empresa;
+- exclusão segura.
+
+O arquivo js/creditos.js foi restaurado para a última versão funcional anterior.
+A alteração visual está concentrada no CSS e na inclusão da logo AV.
+
+Também foi colocado cache-busting no index.html para impedir o navegador/Cloudflare
+de continuar usando CSS/JS antigo.
+
+SUBSTITUIR NO GITHUB:
+index.html
+css/creditos.css
+js/creditos.js
+assets/av-logo.png
+
+NÃO ALTERAR:
+functions/
+workflows do n8n
+Cloudflare secrets
+
+OBSERVAÇÃO SOBRE SALDO REAL:
+O painel atual consulta gasto real do mês. O saldo/crédito restante só pode ser
+exibido se o provedor disponibilizar esse valor pela integração utilizada.
+Não foi criado saldo virtual.
