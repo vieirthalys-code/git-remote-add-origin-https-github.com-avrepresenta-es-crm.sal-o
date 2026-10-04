@@ -73,8 +73,8 @@
       <section id="visao-geral" class="section active">
         <div class="stats-grid">
           <article class="stat-card"><span>Empresas</span><strong id="stat-empresas">0</strong></article>
-          <article class="stat-card"><span>Créditos disponíveis</span><strong id="stat-saldo">0</strong></article>
-          <article class="stat-card"><span>Tokens consumidos</span><strong id="stat-consumidos">0</strong></article>
+          <article class="stat-card"><span>Saldo IA disponível</span><strong id="stat-saldo">R$ 0,00</strong></article>
+          <article class="stat-card"><span>Consumo de IA</span><strong id="stat-consumidos">R$ 0,00</strong></article>
           <article class="stat-card"><span>Agentes ativos</span><strong id="stat-agentes">0</strong></article>
         </div>
 
@@ -103,7 +103,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Empresa</th><th>ID</th><th>Status</th><th>Saldo</th><th>Consumidos</th><th>Crédito</th><th>Agente</th><th>Ações</th></tr></thead>
+              <thead><tr><th>Empresa</th><th>ID</th><th>Status</th><th>Saldo IA (R$)</th><th>Consumido (R$)</th><th>Saldo ativo</th><th>Agente</th><th>Ações</th></tr></thead>
               <tbody id="empresas-body"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody>
             </table>
           </div>
@@ -138,17 +138,21 @@
       </section>
 
       <section id="creditos" class="section">
-        <div class="stats-grid compact-stats">
+        <div class="stats-grid credits-money-stats">
           <article class="stat-card"><span>Empresas</span><strong id="credit-stat-empresas">0</strong></article>
-          <article class="stat-card"><span>Créditos disponíveis</span><strong id="credit-stat-saldo">0</strong></article>
-          <article class="stat-card"><span>Tokens consumidos</span><strong id="credit-stat-consumidos">0</strong></article>
+          <article class="stat-card"><span>Saldo disponível</span><strong id="credit-stat-saldo-money">R$ 0,00</strong></article>
+          <article class="stat-card"><span>Total creditado</span><strong id="credit-stat-creditado">R$ 0,00</strong></article>
+          <article class="stat-card"><span>Total consumido</span><strong id="credit-stat-consumido-money">R$ 0,00</strong></article>
         </div>
         <div class="panel">
-          <div class="panel-head"><div><h2>Créditos de IA</h2><p>Saldo interno por empresa, controlado pelo PostgreSQL através do n8n.</p></div></div>
+          <div class="panel-head">
+            <div><h2>Créditos de IA por empresa</h2><p>Saldo em reais separado por <code>empresa_id</code> e provedor. Os valores de uma empresa não alteram o saldo das demais.</p></div>
+            <button class="btn btn-secondary" id="ia-refresh-btn" type="button">Atualizar créditos</button>
+          </div>
           <div class="table-wrap">
-            <table>
-              <thead><tr><th>Empresa</th><th>ID</th><th>Status</th><th>Saldo</th><th>Consumidos</th><th>Crédito</th><th>Agente</th><th>Ações</th></tr></thead>
-              <tbody id="creditos-body"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody>
+            <table class="money-credit-table">
+              <thead><tr><th>Empresa</th><th>ID</th><th>Provedor</th><th>Saldo</th><th>Creditado</th><th>Consumido</th><th>Prompt</th><th>Agente</th><th>Ações</th></tr></thead>
+              <tbody id="creditos-body"><tr><td colspan="9" class="empty">Carregando...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -220,8 +224,14 @@
 
       <section id="historico" class="section">
         <div class="panel">
-          <div class="panel-head"><div><h2>Histórico de créditos</h2><p>Movimentações registradas pelo PostgreSQL.</p></div><select id="historico-filtro" class="input compact-select"><option value="0">Todas as empresas</option></select></div>
-          <div class="table-wrap"><table><thead><tr><th>Data</th><th>Empresa</th><th>Tipo</th><th>Quantidade</th><th>Saldo anterior</th><th>Saldo posterior</th><th>Observação</th></tr></thead><tbody id="historico-body"><tr><td colspan="7" class="empty">Carregando...</td></tr></tbody></table></div>
+          <div class="panel-head">
+            <div><h2>Histórico financeiro da IA</h2><p>Entradas, retiradas e consumo em reais por empresa e provedor.</p></div>
+            <div class="history-filters">
+              <select id="historico-filtro" class="input compact-select"><option value="0">Todas as empresas</option></select>
+              <select id="historico-provedor" class="input compact-select"><option value="">Todos os provedores</option><option value="GEMINI">GEMINI</option><option value="OPENAI">OPENAI</option></select>
+            </div>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Data</th><th>Empresa</th><th>Provedor</th><th>Tipo</th><th>Valor</th><th>Saldo anterior</th><th>Saldo posterior</th><th>Observação</th></tr></thead><tbody id="historico-body"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody></table></div>
         </div>
       </section>
     </main>
@@ -229,9 +239,10 @@
 
   <dialog id="credit-dialog" class="dialog">
     <form id="credit-form" method="dialog">
-      <div class="dialog-head"><div><p class="eyebrow">MOVIMENTAÇÃO</p><h2 id="dialog-title">Adicionar créditos</h2><p id="dialog-company"></p></div><button type="button" class="icon-btn" id="dialog-close">×</button></div>
-      <input id="form-empresa-id" type="hidden"><input id="form-operation" type="hidden">
-      <label>Quantidade de tokens<input id="form-quantidade" class="input" type="number" min="1" step="1" required></label>
+      <div class="dialog-head"><div><p class="eyebrow">SALDO EM REAIS</p><h2 id="dialog-title">Adicionar saldo</h2><p id="dialog-company"></p></div><button type="button" class="icon-btn" id="dialog-close">×</button></div>
+      <input id="form-empresa-id" type="hidden"><input id="form-operation" type="hidden"><input id="form-provedor" type="hidden"><input id="form-saldo-atual" type="hidden">
+      <label>Provedor<input id="form-provedor-view" class="input" type="text" readonly></label>
+      <label>Valor (R$)<input id="form-valor" class="input" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
       <label>Observação<textarea id="form-observacao" class="input" rows="3" maxlength="1000"></textarea></label>
       <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="dialog-cancel">Cancelar</button><button type="submit" class="btn btn-primary" id="dialog-submit">Confirmar</button></div>
     </form>
@@ -239,11 +250,27 @@
 
   <dialog id="define-dialog" class="dialog">
     <form id="define-form" method="dialog">
-      <div class="dialog-head"><div><p class="eyebrow">SALDO ABSOLUTO</p><h2>Definir saldo</h2><p id="define-company"></p></div><button type="button" class="icon-btn" id="define-close">×</button></div>
-      <input id="define-empresa-id" type="hidden">
-      <label>Novo saldo de tokens<input id="define-saldo" class="input" type="number" min="0" step="1" required></label>
+      <div class="dialog-head"><div><p class="eyebrow">SALDO EM REAIS</p><h2>Definir saldo</h2><p id="define-company"></p></div><button type="button" class="icon-btn" id="define-close">×</button></div>
+      <input id="define-empresa-id" type="hidden"><input id="define-provedor" type="hidden"><input id="define-saldo-atual" type="hidden">
+      <label>Provedor<input id="define-provedor-view" class="input" type="text" readonly></label>
+      <label>Novo saldo (R$)<input id="define-saldo" class="input" type="number" min="0" step="0.01" inputmode="decimal" required></label>
       <label>Observação<textarea id="define-observacao" class="input" rows="3" maxlength="1000"></textarea></label>
       <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="define-cancel">Cancelar</button><button type="submit" class="btn btn-primary">Salvar saldo</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="agent-dialog" class="dialog wide-dialog">
+    <form id="agent-form" method="dialog">
+      <div class="dialog-head"><div><p class="eyebrow">CONFIGURAÇÃO DO ROBÔ</p><h2>Prompt do Agente IA</h2><p id="agent-company"></p></div><button type="button" class="icon-btn" id="agent-close">×</button></div>
+      <input id="agent-empresa-id" type="hidden">
+      <label>Provedor<select id="agent-provider" class="input" disabled><option value="GEMINI">GEMINI · WhatsApp</option><option value="OPENAI">OPENAI · CRM</option></select></label>
+      <label>Prompt do sistema<textarea id="agent-prompt" class="input prompt-editor" rows="10" maxlength="12000" placeholder="Exemplo: Sempre que o cliente entrar em contato, peça nome e CPF para agilizar o atendimento. Não invente informações e siga as regras do escritório."></textarea></label>
+      <p class="prompt-help">No provedor GEMINI, este texto é carregado no <strong>Agente WhatsApp Gemini</strong> antes de cada resposta da empresa selecionada.</p>
+      <div class="toggle-grid">
+        <label class="toggle-card"><input id="agent-active" type="checkbox"><span><strong>Agente ativo</strong><small>Permite que o robô responda.</small></span></label>
+        <label class="toggle-card"><input id="balance-active" type="checkbox"><span><strong>Controle de saldo ativo</strong><small>Bloqueia o uso quando o saldo não estiver liberado.</small></span></label>
+      </div>
+      <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="agent-cancel">Cancelar</button><button type="submit" class="btn btn-primary" id="agent-submit">Salvar configuração</button></div>
     </form>
   </dialog>
 
