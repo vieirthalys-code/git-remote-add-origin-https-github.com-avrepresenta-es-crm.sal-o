@@ -4,6 +4,7 @@
   const SUPABASE_URL = 'https://eancpttjrcetmpyqwanw.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_vaPoYvu7bfg7okcczhyetA_L4-dKvZD';
   const N8N_BASE = 'https://possessivebull-n8n.cloudfy.live/webhook/crm-juridico/admin';
+  const IA_ADMIN_BASE = 'https://possessivebull-n8n.cloudfy.live/webhook/crm-juridico/ia-admin';
   const ALLOWED_ADMIN_EMAIL = 'avrep.tech@gmail.com';
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
@@ -12,6 +13,7 @@
 
   let session = null;
   let empresas = [];
+  let iaRows = [];
   let crmCache = new Map();
   let toastTimer = null;
   let currentCrmModule = 'resumo';
@@ -114,6 +116,133 @@
     return data;
   }
 
+  async function iaApi(path, payload = {}) {
+    if (!session) throw new Error('Sessão expirada.');
+    const response = await fetch(`${IA_ADMIN_BASE}/${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({...payload, access_token: session.access_token}),
+      cache: 'no-store'
+    });
+    const raw = await response.text();
+    let data;
+    try { data = JSON.parse(raw); } catch { throw new Error(`Resposta inválida do IA Admin (${response.status}).`); }
+    if (!response.ok) throw new Error(data?.erro || data?.message || `HTTP ${response.status}`);
+    if (data?.ok === false) throw new Error(data.erro || data.message || 'Operação não autorizada.');
+    return data;
+  }
+
+  function brl(value) {
+    return new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'}).format(number(value));
+  }
+
+  function firstItem(data) {
+    if (Array.isArray(data)) return data[0] || {};
+    return data && typeof data === 'object' ? data : {};
+  }
+
+  function normalizeIaRows(data) {
+    const out = [];
+    const push = (row, parent = {}) => {
+      if (!row || typeof row !== 'object') return;
+      const merged = {...parent, ...row};
+      const empresaId = merged.empresa_id ?? merged.id_empresa ?? merged.empresa?.id;
+      const provedor = String(merged.provedor || merged.provider || '').toUpperCase();
+      if (empresaId && provedor) out.push({...merged, empresa_id:Number(empresaId), provedor});
+    };
+    const scan = (value, parent = {}) => {
+      if (!value) return;
+      if (Array.isArray(value)) { value.forEach(v => scan(v, parent)); return; }
+      if (typeof value !== 'object') return;
+      const empresaId = value.empresa_id ?? value.id_empresa ?? value.empresa?.id;
+      const base = empresaId ? {...parent, ...value} : parent;
+      if (empresaId && (value.provedor || value.provider)) push(value, parent);
+      ['provedores','providers','ias','configuracoes'].forEach(k => {
+        if (Array.isArray(value[k])) value[k].forEach(v => push(v, base));
+      });
+      if (value.gemini && typeof value.gemini === 'object') push({...value.gemini, provedor:'GEMINI'}, base);
+      if (value.openai && typeof value.openai === 'object') push({...value.openai, provedor:'OPENAI'}, base);
+      ['dados','data','empresas','resultados','rows'].forEach(k => {
+        if (value[k] && value[k] !== value) scan(value[k], base);
+      });
+    };
+    scan(data);
+    const unique = new Map();
+    for (const row of out) unique.set(`${row.empresa_id}:${row.provedor}`, row);
+    return [...unique.values()].sort((a,b) => Number(a.empresa_id)-Number(b.empresa_id) || String(a.provedor).localeCompare(String(b.provedor)));
+  }
+
+  function iaCompanyName(row) {
+    const local = selectedEmpresa(row.empresa_id);
+    return row.empresa_nome || row.nome_empresa || row.empresa?.nome || local?.empresa_nome || `Empresa #${row.empresa_id}`;
+  }
+
+  function iaField(row, ...keys) {
+    for (const key of keys) if (row?.[key] !== undefined && row?.[key] !== null) return row[key];
+    return null;
+  }
+
+  function iaRowHtml(row) {
+    const saldo = number(iaField(row,'saldo','saldo_atual'));
+    const creditado = number(iaField(row,'total_creditado','creditado'));
+    const consumido = number(iaField(row,'total_consumido','consumido'));
+    const prompt = String(iaField(row,'prompt_sistema','prompt') || '').trim();
+    const agente = Boolean(iaField(row,'agente_ativo'));
+    const saldoAtivo = Boolean(iaField(row,'saldo_ativo'));
+    const liberado = Boolean(iaField(row,'uso_liberado'));
+    return `<tr>
+      <td><div class="company-name">${escapeHtml(iaCompanyName(row))}</div></td>
+      <td class="number">${escapeHtml(row.empresa_id)}</td>
+      <td><span class="provider-chip ${row.provedor==='GEMINI'?'gemini':'openai'}">${escapeHtml(row.provedor)}</span></td>
+      <td class="number"><strong>${brl(saldo)}</strong></td>
+      <td class="number">${brl(creditado)}</td>
+      <td class="number">${brl(consumido)}</td>
+      <td><span class="badge ${prompt?'on':'off'}">${prompt?'Configurado':'Vazio'}</span></td>
+      <td><span class="badge ${agente&&liberado?'on':'off'}">${agente ? (saldoAtivo ? (liberado?'Ativo':'Bloqueado') : 'Ativo') : 'Inativo'}</span></td>
+      <td><div class="actions money-actions">
+        <button class="btn btn-primary btn-small" data-ia-action="add" data-id="${row.empresa_id}" data-provider="${row.provedor}">Adicionar</button>
+        <button class="btn btn-danger btn-small" data-ia-action="remove" data-id="${row.empresa_id}" data-provider="${row.provedor}">Retirar</button>
+        <button class="btn btn-secondary btn-small" data-ia-action="define" data-id="${row.empresa_id}" data-provider="${row.provedor}">Definir</button>
+        <button class="btn btn-secondary btn-small" data-ia-action="agent" data-id="${row.empresa_id}" data-provider="${row.provedor}">Configurar IA</button>
+        <button class="btn btn-secondary btn-small" data-ia-action="history" data-id="${row.empresa_id}" data-provider="${row.provedor}">Histórico</button>
+      </div></td>
+    </tr>`;
+  }
+
+  function renderIaStats() {
+    const ids = new Set(iaRows.map(r => Number(r.empresa_id)).filter(Boolean));
+    const saldo = iaRows.reduce((s,r)=>s+number(iaField(r,'saldo','saldo_atual')),0);
+    const creditado = iaRows.reduce((s,r)=>s+number(iaField(r,'total_creditado','creditado')),0);
+    const consumido = iaRows.reduce((s,r)=>s+number(iaField(r,'total_consumido','consumido')),0);
+    $('#credit-stat-empresas').textContent = fmt.format(ids.size || empresas.length);
+    $('#credit-stat-saldo-money').textContent = brl(saldo);
+    $('#credit-stat-creditado').textContent = brl(creditado);
+    $('#credit-stat-consumido-money').textContent = brl(consumido);
+    $('#stat-saldo').textContent = brl(saldo);
+    $('#stat-consumidos').textContent = brl(consumido);
+    $('#stat-agentes').textContent = fmt.format(iaRows.filter(r => Boolean(iaField(r,'agente_ativo'))).length);
+    renderCompanyLists();
+  }
+
+  async function loadIaAdminData() {
+    $('#creditos-body').innerHTML = '<tr><td colspan="9" class="empty">Carregando saldos em reais...</td></tr>';
+    try {
+      const data = await iaApi('listar', {});
+      iaRows = normalizeIaRows(data);
+      renderCreditTable();
+      renderIaStats();
+    } catch (error) {
+      iaRows = [];
+      $('#creditos-body').innerHTML = `<tr><td colspan="9" class="empty">${escapeHtml(error.message)}</td></tr>`;
+      renderIaStats();
+      throw error;
+    }
+  }
+
   async function loadEmpresas() {
     $('#empresas-body').innerHTML = '<tr><td colspan="8" class="empty">Carregando...</td></tr>';
     const data = await api('empresas', {});
@@ -134,8 +263,6 @@
     $('#stat-consumidos').textContent = fmt.format(consumidos);
     $('#stat-agentes').textContent = fmt.format(agentes);
     $('#credit-stat-empresas').textContent = fmt.format(empresas.length);
-    $('#credit-stat-saldo').textContent = fmt.format(saldo);
-    $('#credit-stat-consumidos').textContent = fmt.format(consumidos);
   }
 
   function renderCompanySelectors() {
@@ -166,71 +293,179 @@
   }
 
   function companyRow(e) {
-    const credito = Boolean(e.credito_ativo);
-    const agente = Boolean(e.agente_ativo);
+    const configs = iaRows.filter(r => String(r.empresa_id) === String(e.empresa_id));
+    const saldo = configs.reduce((s,r)=>s+number(iaField(r,'saldo','saldo_atual')),0);
+    const consumido = configs.reduce((s,r)=>s+number(iaField(r,'total_consumido','consumido')),0);
+    const credito = configs.some(r => Boolean(iaField(r,'saldo_ativo')));
+    const agente = configs.some(r => Boolean(iaField(r,'agente_ativo')));
     return `<tr>
       <td><div class="company-name">${escapeHtml(e.empresa_nome)}</div><div class="company-slug">${escapeHtml(e.empresa_slug||'')}</div></td>
       <td class="number">${escapeHtml(e.empresa_id)}</td>
       <td><span class="badge ${String(e.empresa_status).toUpperCase()==='ATIVO'?'on':'off'}">${escapeHtml(e.empresa_status||'')}</span></td>
-      <td class="number"><strong>${fmt.format(number(e.saldo_tokens))}</strong></td>
-      <td class="number">${fmt.format(number(e.tokens_consumidos))}</td>
+      <td class="number"><strong>${configs.length?brl(saldo):'—'}</strong></td>
+      <td class="number">${configs.length?brl(consumido):'—'}</td>
       <td><span class="badge ${credito?'on':'off'}">${credito?'Ativo':'Inativo'}</span></td>
       <td><span class="badge ${agente?'on':'off'}">${agente?'Ativo':'Inativo'}</span></td>
       <td><div class="actions">
         <button class="btn btn-secondary btn-small" data-action="crm" data-id="${e.empresa_id}">CRM</button>
-        <button class="btn btn-primary btn-small" data-action="add" data-id="${e.empresa_id}">Adicionar</button>
-        <button class="btn btn-danger btn-small" data-action="remove" data-id="${e.empresa_id}">Retirar</button>
-        <button class="btn btn-secondary btn-small" data-action="define" data-id="${e.empresa_id}">Definir</button>
-        <button class="btn btn-secondary btn-small" data-action="history" data-id="${e.empresa_id}">Histórico</button>
+        <button class="btn btn-primary btn-small" data-go="creditos">Gerenciar IA</button>
       </div></td>
     </tr>`;
   }
 
   function renderCreditTable() {
-    $('#creditos-body').innerHTML = empresas.length ? empresas.map(companyRow).join('') : '<tr><td colspan="8" class="empty">Nenhuma empresa encontrada.</td></tr>';
+    $('#creditos-body').innerHTML = iaRows.length ? iaRows.map(iaRowHtml).join('') : '<tr><td colspan="9" class="empty">Nenhuma configuração monetária de IA encontrada.</td></tr>';
   }
 
   function selectedEmpresa(id) { return empresas.find(e => String(e.empresa_id) === String(id)); }
+  function selectedIaRow(id, provider) { return iaRows.find(r => String(r.empresa_id) === String(id) && String(r.provedor).toUpperCase() === String(provider).toUpperCase()); }
 
-  function openCreditDialog(id, operation) {
-    const empresa = selectedEmpresa(id); if (!empresa) return;
-    $('#form-empresa-id').value=id; $('#form-operation').value=operation; $('#form-quantidade').value='';
-    $('#form-observacao').value=operation==='add'?'Recarga administrativa':'Ajuste administrativo';
-    $('#dialog-title').textContent=operation==='add'?'Adicionar créditos':'Retirar créditos';
-    $('#dialog-company').textContent=`${empresa.empresa_nome} · empresa_id ${empresa.empresa_id}`;
-    $('#dialog-submit').textContent=operation==='add'?'Adicionar':'Retirar';
+  function openCreditDialog(id, provider, operation) {
+    const row = selectedIaRow(id, provider); if (!row) return;
+    const empresa = iaCompanyName(row);
+    $('#form-empresa-id').value = id;
+    $('#form-operation').value = operation;
+    $('#form-provedor').value = row.provedor;
+    $('#form-provedor-view').value = row.provedor;
+    $('#form-saldo-atual').value = number(iaField(row,'saldo','saldo_atual'));
+    $('#form-valor').value = '';
+    $('#form-observacao').value = operation === 'add' ? 'Recarga administrativa em reais' : 'Retirada administrativa em reais';
+    $('#dialog-title').textContent = operation === 'add' ? 'Adicionar saldo' : 'Retirar saldo';
+    $('#dialog-company').textContent = `${empresa} · empresa_id ${row.empresa_id}`;
+    $('#dialog-submit').textContent = operation === 'add' ? 'Adicionar saldo' : 'Retirar saldo';
     $('#credit-dialog').showModal();
   }
 
-  function openDefineDialog(id) {
-    const empresa=selectedEmpresa(id); if(!empresa) return;
-    $('#define-empresa-id').value=id; $('#define-saldo').value=number(empresa.saldo_tokens); $('#define-observacao').value='Ajuste administrativo de saldo';
-    $('#define-company').textContent=`${empresa.empresa_nome} · empresa_id ${empresa.empresa_id}`;
+  function openDefineDialog(id, provider) {
+    const row = selectedIaRow(id, provider); if (!row) return;
+    const atual = number(iaField(row,'saldo','saldo_atual'));
+    $('#define-empresa-id').value = id;
+    $('#define-provedor').value = row.provedor;
+    $('#define-provedor-view').value = row.provedor;
+    $('#define-saldo-atual').value = atual;
+    $('#define-saldo').value = atual.toFixed(2);
+    $('#define-observacao').value = 'Definição administrativa do saldo em reais';
+    $('#define-company').textContent = `${iaCompanyName(row)} · empresa_id ${row.empresa_id}`;
     $('#define-dialog').showModal();
+  }
+
+  function openAgentDialog(id, provider) {
+    const row = selectedIaRow(id, provider); if (!row) return;
+    $('#agent-empresa-id').value = id;
+    $('#agent-provider').value = row.provedor;
+    $('#agent-company').textContent = `${iaCompanyName(row)} · empresa_id ${row.empresa_id}`;
+    $('#agent-prompt').value = String(iaField(row,'prompt_sistema','prompt') || '');
+    $('#agent-active').checked = Boolean(iaField(row,'agente_ativo'));
+    $('#balance-active').checked = Boolean(iaField(row,'saldo_ativo'));
+    $('#agent-dialog').showModal();
+  }
+
+  function uniqueReference(prefix, empresaId, provider) {
+    const uid = (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`).replace(/[^a-zA-Z0-9-]/g,'');
+    return `${prefix}_${provider}_${empresaId}_${uid}`.slice(0,180);
   }
 
   async function submitCredit(event) {
     event.preventDefault();
-    const empresa_id=Number($('#form-empresa-id').value), operation=$('#form-operation').value, quantidade=Number($('#form-quantidade').value), observacao=$('#form-observacao').value.trim();
-    if(!Number.isInteger(quantidade)||quantidade<=0){toast('Informe uma quantidade de tokens maior que zero.',true);return;}
-    $('#dialog-submit').disabled=true;
-    try { const data=await api(operation==='add'?'creditos/adicionar':'creditos/retirar',{empresa_id,quantidade,observacao}); toast(`Operação concluída. Novo saldo: ${fmt.format(number(data.saldo_posterior))}.`); $('#credit-dialog').close(); await loadEmpresas(); await loadHistorico(); }
-    catch(error){toast(error.message,true);} finally{$('#dialog-submit').disabled=false;}
+    const empresa_id = Number($('#form-empresa-id').value);
+    const provider = $('#form-provedor').value;
+    const operation = $('#form-operation').value;
+    const valor = Number($('#form-valor').value);
+    const observacao = $('#form-observacao').value.trim();
+    if (!Number.isFinite(valor) || valor <= 0) { toast('Informe um valor em reais maior que zero.', true); return; }
+    $('#dialog-submit').disabled = true;
+    try {
+      const payload = {
+        empresa_id,
+        provedor: provider,
+        operacao: operation === 'add' ? 'ADICIONAR' : 'RETIRAR',
+        valor: Number(valor.toFixed(2)),
+        observacao,
+        referencia_externa: uniqueReference(operation === 'add' ? 'PAINEL_ADD' : 'PAINEL_RET', empresa_id, provider)
+      };
+      const data = await iaApi('saldo', payload);
+      const result = firstItem(data);
+      const novo = iaField(result,'saldo_depois','saldo_posterior','saldo');
+      toast(`Operação concluída${novo !== null ? `. Novo saldo: ${brl(novo)}` : ''}.`);
+      $('#credit-dialog').close();
+      await loadIaAdminData();
+      if ($('#historico')?.classList.contains('active')) await loadHistorico();
+    } catch (error) { toast(error.message, true); }
+    finally { $('#dialog-submit').disabled = false; }
   }
 
   async function submitDefine(event) {
     event.preventDefault();
-    const empresa_id=Number($('#define-empresa-id').value), saldo_tokens=Number($('#define-saldo').value), observacao=$('#define-observacao').value.trim();
-    if(!Number.isInteger(saldo_tokens)||saldo_tokens<0){toast('Informe um saldo válido.',true);return;}
-    const button=$('#define-form button[type="submit"]'); button.disabled=true;
-    try { const data=await api('creditos/definir',{empresa_id,saldo_tokens,observacao}); toast(`Saldo definido: ${fmt.format(number(data.saldo_posterior))}.`); $('#define-dialog').close(); await loadEmpresas(); await loadHistorico(); }
-    catch(error){toast(error.message,true);} finally{button.disabled=false;}
+    const empresa_id = Number($('#define-empresa-id').value);
+    const provider = $('#define-provedor').value;
+    const atual = Number($('#define-saldo-atual').value || 0);
+    const alvo = Number($('#define-saldo').value);
+    const observacao = $('#define-observacao').value.trim();
+    if (!Number.isFinite(alvo) || alvo < 0) { toast('Informe um saldo válido em reais.', true); return; }
+    const diff = Number((alvo - atual).toFixed(2));
+    if (Math.abs(diff) < 0.005) { $('#define-dialog').close(); toast('O saldo já está nesse valor.'); return; }
+    const button = $('#define-form button[type="submit"]'); button.disabled = true;
+    try {
+      const data = await iaApi('saldo', {
+        empresa_id,
+        provedor: provider,
+        operacao: diff > 0 ? 'ADICIONAR' : 'RETIRAR',
+        valor: Math.abs(diff),
+        observacao,
+        referencia_externa: uniqueReference('PAINEL_DEF', empresa_id, provider)
+      });
+      const result = firstItem(data);
+      const novo = iaField(result,'saldo_depois','saldo_posterior','saldo');
+      toast(`Saldo definido${novo !== null ? ` em ${brl(novo)}` : ''}.`);
+      $('#define-dialog').close();
+      await loadIaAdminData();
+      if ($('#historico')?.classList.contains('active')) await loadHistorico();
+    } catch (error) { toast(error.message, true); }
+    finally { button.disabled = false; }
+  }
+
+  async function submitAgent(event) {
+    event.preventDefault();
+    const empresa_id = Number($('#agent-empresa-id').value);
+    const provider = $('#agent-provider').value;
+    const prompt_sistema = $('#agent-prompt').value.trim();
+    const agente_ativo = $('#agent-active').checked;
+    const saldo_ativo = $('#balance-active').checked;
+    const button = $('#agent-submit'); button.disabled = true;
+    try {
+      await iaApi('configuracao', {empresa_id, provedor: provider, prompt_sistema, agente_ativo, saldo_ativo});
+      toast(provider === 'GEMINI' ? 'Prompt do Agente WhatsApp Gemini salvo.' : 'Configuração do agente salva.');
+      $('#agent-dialog').close();
+      await loadIaAdminData();
+    } catch (error) { toast(error.message, true); }
+    finally { button.disabled = false; }
+  }
+
+  function historyRows(data) {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.historico)) return data.historico;
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data?.rows)) return data.rows;
+    return [];
   }
 
   async function loadHistorico(empresa_id=Number($('#historico-filtro').value||0)) {
-    $('#historico-body').innerHTML='<tr><td colspan="7" class="empty">Carregando...</td></tr>';
-    try { const data=await api('historico',{empresa_id,limite:100}); const rows=Array.isArray(data.historico)?data.historico:[]; $('#historico-body').innerHTML=rows.length?rows.map(h=>`<tr><td>${date(h.created_at)}</td><td>${escapeHtml(h.empresa_nome)} <small>#${escapeHtml(h.empresa_id)}</small></td><td>${escapeHtml(h.tipo)}</td><td class="number">${fmt.format(number(h.quantidade))}</td><td class="number">${fmt.format(number(h.saldo_anterior))}</td><td class="number"><strong>${fmt.format(number(h.saldo_posterior))}</strong></td><td>${escapeHtml(h.observacao||'')}</td></tr>`).join(''):'<tr><td colspan="7" class="empty">Nenhuma movimentação registrada.</td></tr>'; }
-    catch(error){$('#historico-body').innerHTML=`<tr><td colspan="7" class="empty">${escapeHtml(error.message)}</td></tr>`;}
+    $('#historico-body').innerHTML='<tr><td colspan="8" class="empty">Carregando...</td></tr>';
+    try {
+      const provedor = $('#historico-provedor')?.value || '';
+      const data = await iaApi('historico',{empresa_id, provedor, limite:100});
+      const rows = historyRows(data);
+      $('#historico-body').innerHTML = rows.length ? rows.map(h=>`<tr>
+        <td>${date(h.criado_em || h.created_at)}</td>
+        <td>${escapeHtml(h.empresa_nome || `Empresa #${h.empresa_id}`)} <small>#${escapeHtml(h.empresa_id)}</small></td>
+        <td><span class="provider-chip ${String(h.provedor).toUpperCase()==='GEMINI'?'gemini':'openai'}">${escapeHtml(h.provedor||'—')}</span></td>
+        <td>${escapeHtml(h.tipo||'—')}</td>
+        <td class="number">${brl(h.valor)}</td>
+        <td class="number">${brl(h.saldo_antes)}</td>
+        <td class="number"><strong>${brl(h.saldo_depois)}</strong></td>
+        <td>${escapeHtml(h.observacao||'')}</td>
+      </tr>`).join('') : '<tr><td colspan="8" class="empty">Nenhuma movimentação financeira registrada.</td></tr>';
+    } catch(error) { $('#historico-body').innerHTML=`<tr><td colspan="8" class="empty">${escapeHtml(error.message)}</td></tr>`; }
   }
 
   async function loadCrmData(empresaId, modulo='resumo') {
@@ -396,23 +631,36 @@
 
   function bindEvents() {
     $('#login-form').addEventListener('submit',login);
-    $('#refresh-btn').addEventListener('click',async()=>{try{crmCache.clear();await loadEmpresas();await loadHistorico();const id=$('#crm-company-select').value;if(id) await openCrm(id,currentCrmModule);if($('#financeiro-api')?.classList.contains('active')) await loadProviderBilling();else toast('Dados atualizados.');}catch(e){toast(e.message,true);}});
+    $('#refresh-btn').addEventListener('click',async()=>{try{crmCache.clear();await loadEmpresas();await loadIaAdminData();await loadHistorico();const id=$('#crm-company-select').value;if(id) await openCrm(id,currentCrmModule);if($('#financeiro-api')?.classList.contains('active')) await loadProviderBilling();else toast('Dados atualizados.');}catch(e){toast(e.message,true);}});
     $('#empresa-search').addEventListener('input',()=>{renderCompanyLists();renderCreditTable();});
     $('#historico-filtro').addEventListener('change',()=>loadHistorico());
+    $('#historico-provedor').addEventListener('change',()=>loadHistorico());
+    $('#ia-refresh-btn')?.addEventListener('click',async()=>{try{await loadIaAdminData();toast('Créditos atualizados.');}catch(e){toast(e.message,true);}});
     $('#billing-refresh-btn')?.addEventListener('click',loadProviderBilling);
     $('#crm-company-select').addEventListener('change',e=>openCrm(e.target.value,currentCrmModule));
     $('#overview-company-select').addEventListener('change',e=>openOverviewCompany(e.target.value));
     $('#crm-module-tabs').addEventListener('click',e=>{const b=e.target.closest('.module-tab');if(!b)return;openCrm($('#crm-company-select').value,b.dataset.module);});
     document.body.addEventListener('click',e=>{
       const go=e.target.closest('[data-go]'); if(go){showSection(go.dataset.go);return;}
+      const iaButton=e.target.closest('[data-ia-action]');
+      if(iaButton){
+        const id=iaButton.dataset.id, provider=iaButton.dataset.provider, action=iaButton.dataset.iaAction;
+        if(action==='add') openCreditDialog(id,provider,'add');
+        if(action==='remove') openCreditDialog(id,provider,'remove');
+        if(action==='define') openDefineDialog(id,provider);
+        if(action==='agent') openAgentDialog(id,provider);
+        if(action==='history') { $('#historico-filtro').value=id; $('#historico-provedor').value=provider; showSection('historico'); loadHistorico(Number(id)); }
+        return;
+      }
       const b=e.target.closest('[data-action]');
-      if(b){const id=b.dataset.id,action=b.dataset.action;if(action==='crm')openCrm(id);if(action==='add')openCreditDialog(id,'add');if(action==='remove')openCreditDialog(id,'remove');if(action==='define')openDefineDialog(id);if(action==='history'){$('#historico-filtro').value=id;showSection('historico');loadHistorico(Number(id));}return;}
+      if(b){const id=b.dataset.id,action=b.dataset.action;if(action==='crm')openCrm(id);return;}
       const detail=e.target.closest('[data-detail-index]');
       if(detail){const rows=JSON.parse($('#crm-module-content').dataset.rows||'[]');const row=rows[Number(detail.dataset.detailIndex)];if(row){$('#detail-title').textContent=detail.dataset.detailTitle||'Detalhes';$('#detail-json').textContent=JSON.stringify(row,null,2);$('#detail-dialog').showModal();}}
     });
-    $('#credit-form').addEventListener('submit',submitCredit);$('#define-form').addEventListener('submit',submitDefine);
+    $('#credit-form').addEventListener('submit',submitCredit);$('#define-form').addEventListener('submit',submitDefine);$('#agent-form').addEventListener('submit',submitAgent);
     ['dialog-close','dialog-cancel'].forEach(id=>$('#'+id).addEventListener('click',()=>$('#credit-dialog').close()));
     ['define-close','define-cancel'].forEach(id=>$('#'+id).addEventListener('click',()=>$('#define-dialog').close()));
+    ['agent-close','agent-cancel'].forEach(id=>$('#'+id).addEventListener('click',()=>$('#agent-dialog').close()));
     $('#detail-close').addEventListener('click',()=>$('#detail-dialog').close());
     $$('.nav-link').forEach(link=>link.addEventListener('click',e=>{e.preventDefault();showSection(link.dataset.section);history.replaceState(null,'','#'+link.dataset.section);}));
     $('#logout-btn').addEventListener('click',async()=>{await supabase.auth.signOut();session=null;crmCache.clear();showAuth(true);toast('Sessão encerrada.');});
@@ -421,6 +669,7 @@
 
   async function bootData() {
     await loadEmpresas();
+    await loadIaAdminData();
     await loadHistorico();
     if(empresas.length){await openOverviewCompany(empresas[0].empresa_id);await openCrm(empresas[0].empresa_id,'resumo');}
     const initial=location.hash.replace('#',''); if(initial&&$('#'+initial)) showSection(initial);
