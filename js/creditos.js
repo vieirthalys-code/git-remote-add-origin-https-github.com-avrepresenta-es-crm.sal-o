@@ -17,6 +17,7 @@
   let crmCache = new Map();
   let currentCrmModule = 'resumo';
   let toastTimer = null;
+  let deleteCompanyTarget = null;
 
   const fmt = new Intl.NumberFormat('pt-BR');
   const dateFmt = new Intl.DateTimeFormat('pt-BR', { dateStyle:'short', timeStyle:'short' });
@@ -217,6 +218,9 @@
         <button class="btn btn-secondary btn-small" data-action="crm" data-id="${e.empresa_id}">CRM</button>
         <button class="btn btn-primary btn-small" data-action="ia-real" data-id="${e.empresa_id}">IA real</button>
         <button class="btn btn-secondary btn-small" data-action="prompt" data-id="${e.empresa_id}">Prompt</button>
+        ${Number(e.empresa_id) === 5 || String(e.empresa_nome || '').toLowerCase().startsWith('av representações')
+          ? '<button class="btn btn-secondary btn-small btn-protected" type="button" disabled title="Empresa protegida">Protegida</button>'
+          : `<button class="btn btn-danger btn-small" data-action="delete-company" data-id="${e.empresa_id}">Excluir</button>`}
       </div></td>
     </tr>`;
   }
@@ -398,6 +402,72 @@
     finally { button.disabled = false; }
   }
 
+
+
+  function isProtectedCompany(company) {
+    if (!company) return false;
+    return Number(company.empresa_id) === 5 || String(company.empresa_nome || '').trim().toLowerCase().startsWith('av representações');
+  }
+
+  function openDeleteCompany(companyId) {
+    const company = empresas.find(e => String(e.empresa_id) === String(companyId));
+    if (!company) { toast('Empresa não encontrada.', true); return; }
+    if (isProtectedCompany(company)) { toast('A AV Representações está protegida contra exclusão.', true); return; }
+    deleteCompanyTarget = company;
+    $('#delete-company-name').textContent = company.empresa_nome || '—';
+    $('#delete-company-id').textContent = `empresa_id ${company.empresa_id}`;
+    $('#delete-company-confirmation').value = '';
+    $('#delete-company-submit').disabled = true;
+    $('#delete-company-dialog').showModal();
+    setTimeout(() => $('#delete-company-confirmation').focus(), 100);
+  }
+
+  function closeDeleteCompany() {
+    if ($('#delete-company-dialog').open) $('#delete-company-dialog').close();
+    deleteCompanyTarget = null;
+    $('#delete-company-confirmation').value = '';
+    $('#delete-company-submit').disabled = true;
+  }
+
+  async function deleteCompany(event) {
+    event.preventDefault();
+    const company = deleteCompanyTarget;
+    if (!company || isProtectedCompany(company)) { toast('Empresa protegida ou inválida.', true); return; }
+    const typed = $('#delete-company-confirmation').value.trim();
+    if (typed !== String(company.empresa_nome || '').trim()) {
+      toast('Digite exatamente o nome da empresa para confirmar.', true);
+      return;
+    }
+    const button = $('#delete-company-submit');
+    button.disabled = true;
+    button.textContent = 'Excluindo...';
+    try {
+      const result = await api('empresa/excluir', {
+        empresa_id: Number(company.empresa_id),
+        confirmacao: typed
+      });
+      if (result?.ok === false) throw new Error(result?.mensagem || result?.erro || 'Não foi possível excluir a empresa.');
+      closeDeleteCompany();
+      crmCache.clear();
+      promptRows = promptRows.filter(r => String(r.empresa_id) !== String(company.empresa_id));
+      await loadEmpresas();
+      await loadPrompts();
+      if (empresas.length) {
+        await openOverviewCompany(empresas[0].empresa_id);
+        $('#ia-company-select').value = String(empresas[0].empresa_id);
+      } else {
+        $('#overview-company-details').innerHTML = '<div class="empty">Nenhuma empresa cadastrada.</div>';
+      }
+      const deleted = Number(result?.registros_excluidos || 0);
+      toast(`${company.empresa_nome} excluída permanentemente${deleted ? ` · ${deleted} registro(s) removido(s)` : ''}.`);
+    } catch(error) {
+      toast(error.message || 'Falha ao excluir empresa.', true);
+    } finally {
+      button.textContent = 'Excluir permanentemente';
+      button.disabled = false;
+    }
+  }
+
   function showSection(name) {
     $$('.section').forEach(s=>s.classList.toggle('active',s.id===name));
     $$('.nav-link').forEach(l=>l.classList.toggle('active',l.dataset.section===name));
@@ -436,6 +506,7 @@
         if(b.dataset.action==='crm') openCrm(b.dataset.id);
         if(b.dataset.action==='ia-real') openIaCompany(b.dataset.id);
         if(b.dataset.action==='prompt') openPromptCompany(b.dataset.id);
+        if(b.dataset.action==='delete-company') openDeleteCompany(b.dataset.id);
         return;
       }
       const detail=e.target.closest('[data-detail-index]');
@@ -447,6 +518,13 @@
     });
 
     $('#detail-close').addEventListener('click',()=>$('#detail-dialog').close());
+    $('#delete-company-close').addEventListener('click', closeDeleteCompany);
+    $('#delete-company-cancel').addEventListener('click', closeDeleteCompany);
+    $('#delete-company-form').addEventListener('submit', deleteCompany);
+    $('#delete-company-confirmation').addEventListener('input', e => {
+      const expected = String(deleteCompanyTarget?.empresa_nome || '').trim();
+      $('#delete-company-submit').disabled = e.target.value.trim() !== expected;
+    });
     $$('.nav-link').forEach(link=>link.addEventListener('click',e=>{
       e.preventDefault();
       const section=link.dataset.section;

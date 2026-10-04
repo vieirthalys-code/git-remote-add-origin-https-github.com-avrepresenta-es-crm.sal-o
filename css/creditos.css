@@ -645,3 +645,35 @@ code {
 }
 
 .prompt-auto-note { margin-top:6px; color:var(--muted); font-size:.92rem; }
+
+
+/* Exclusão permanente de empresa */
+.btn-danger {
+  background: #b42318;
+  border-color: #b42318;
+  color: #fff;
+}
+.btn-danger:hover:not(:disabled) { filter: brightness(.94); transform: translateY(-1px); }
+.btn-danger:disabled { opacity:.48; cursor:not-allowed; }
+.btn-protected { opacity:.66; cursor:not-allowed; }
+.delete-company-dialog { width:min(620px, calc(100vw - 28px)); }
+.delete-warning {
+  border:1px solid #f3b4ad;
+  background:#fff6f5;
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:16px;
+}
+.delete-warning strong { color:#912018; display:block; margin-bottom:6px; }
+.delete-warning p { margin:6px 0 0; color:#5f2925; line-height:1.5; }
+.delete-company-target {
+  border:1px solid var(--border);
+  background:var(--surface-soft);
+  border-radius:16px;
+  padding:15px 16px;
+  margin-bottom:16px;
+}
+.delete-company-target span,.delete-company-target small { display:block; color:var(--muted); }
+.delete-company-target strong { display:block; font-size:1.08rem; margin:5px 0; }
+.dialog-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+@media (max-width:640px) { .dialog-actions { flex-direction:column-reverse; } .dialog-actions .btn { width:100%; } }

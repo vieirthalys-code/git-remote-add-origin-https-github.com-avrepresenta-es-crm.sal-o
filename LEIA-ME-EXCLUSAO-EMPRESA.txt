@@ -1,0 +1,29 @@
+ADMIN SAAS — EXCLUSÃO SEGURA DE EMPRESA
+
+O QUE FOI ADICIONADO
+- Botão Excluir na lista Empresas.
+- AV Representações (empresa_id 5) protegida contra exclusão.
+- Confirmação obrigatória digitando exatamente o nome da empresa.
+- Após exclusão, a lista Empresas, IA por Empresa e Prompt são recarregados automaticamente.
+
+O QUE O BOTÃO APAGA
+- A empresa selecionada em crm_juridico_empresas.
+- Dados vinculados nos módulos crm_juridico_*: clientes, processos, documentos, chunks/páginas, agenda, notificações, WhatsApp, Gmail, Drive e configurações/registros antigos de IA.
+- Se encontrar a MESMA empresa por slug/nome em crm_empresas e empresas, também limpa os módulos CRM/SaaS vinculados a esses cadastros, sem assumir que os IDs são iguais.
+
+O QUE NÃO APAGA
+- Conta real da OpenAI.
+- Conta/projeto real do Google Cloud.
+- Segredos salvos no Cloudflare.
+- Registros de outro produto que não possam ser relacionados com segurança por slug/nome.
+
+INSTALAÇÃO
+1) No n8n, importe e ative CRM_JURIDICO_ADMIN_EXCLUIR_EMPRESA_SEGURAMENTE.json.
+2) No GitHub, substitua SOMENTE:
+   index.html
+   css/creditos.css
+   js/creditos.js
+3) Espere o Cloudflare publicar e use Empresas > Excluir.
+
+IMPORTANTE
+Não coloque o JSON do n8n no GitHub público.

@@ -211,6 +211,36 @@
     <pre id="detail-json" class="json-view"></pre>
   </dialog>
 
+
+  <dialog id="delete-company-dialog" class="dialog delete-company-dialog">
+    <div class="dialog-head">
+      <div>
+        <p class="eyebrow">EXCLUSÃO PERMANENTE</p>
+        <h2>Excluir empresa</h2>
+      </div>
+      <button type="button" class="icon-btn" id="delete-company-close">×</button>
+    </div>
+    <div class="delete-warning">
+      <strong>Esta ação é permanente.</strong>
+      <p>Serão apagados os dados desta empresa nos módulos do CRM Jurídico, incluindo clientes, processos, documentos, agenda, notificações, WhatsApp, configurações e registros antigos de IA.</p>
+      <p>Contas reais da OpenAI/Google e segredos do Cloudflare não são apagados por este botão.</p>
+    </div>
+    <div class="delete-company-target">
+      <span>Empresa selecionada</span>
+      <strong id="delete-company-name">—</strong>
+      <small id="delete-company-id">—</small>
+    </div>
+    <form id="delete-company-form">
+      <label>Para confirmar, digite exatamente o nome da empresa:
+        <input id="delete-company-confirmation" class="input" type="text" autocomplete="off" required>
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-secondary" id="delete-company-cancel">Cancelar</button>
+        <button type="submit" class="btn btn-danger" id="delete-company-submit" disabled>Excluir permanentemente</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./js/creditos.js"></script>
 </body>
