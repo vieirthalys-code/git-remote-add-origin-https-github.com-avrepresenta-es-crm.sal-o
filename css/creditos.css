@@ -643,3 +643,5 @@ code {
   .ia-real-selector .compact-select { width:100%; max-width:none; }
   .prompt-actions .btn { width:100%; }
 }
+
+.prompt-auto-note { margin-top:6px; color:var(--muted); font-size:.92rem; }

@@ -88,3 +88,12 @@ functions/api/google/oauth/callback.js
 NÃO SUBA O WORKFLOW DO N8N NO GITHUB.
 O arquivo CRM_JURIDICO_IA_REAL_SEM_SALDO_INTERNO.json é para importar/atualizar diretamente no n8n.
 Ele foi gerado a partir do workflow atual e remove somente as etapas de bloqueio/débito do saldo interno, mantendo o restante do fluxo.
+
+
+ATUALIZAÇÃO — CADASTRO AUTOMÁTICO DE EMPRESA
+- O painel NÃO exige um segundo cadastro para IA.
+- A lista IA por Empresa é gerada diretamente da lista de empresas do CRM.
+- Ao cadastrar uma nova empresa no CRM e gerar o empresa_id, ela aparece automaticamente no painel.
+- O painel sincroniza a lista ao abrir/focar a página e também periodicamente.
+- Toda empresa, inclusive recém-criada, possui a opção Prompt.
+- O prompt só é gravado quando o administrador clicar em Salvar prompt; não é inventado nem pré-preenchido.

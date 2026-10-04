@@ -216,6 +216,7 @@
       <td><div class="company-actions">
         <button class="btn btn-secondary btn-small" data-action="crm" data-id="${e.empresa_id}">CRM</button>
         <button class="btn btn-primary btn-small" data-action="ia-real" data-id="${e.empresa_id}">IA real</button>
+        <button class="btn btn-secondary btn-small" data-action="prompt" data-id="${e.empresa_id}">Prompt</button>
       </div></td>
     </tr>`;
   }
@@ -369,6 +370,15 @@
     await loadProviderBilling(companyId);
   }
 
+  async function openPromptCompany(companyId) {
+    await openIaCompany(companyId);
+    const editor = $('#prompt-gemini');
+    if (editor) {
+      editor.scrollIntoView({behavior:'smooth', block:'center'});
+      setTimeout(() => editor.focus(), 250);
+    }
+  }
+
   async function savePrompt(event) {
     event.preventDefault();
     const empresa_id = Number($('#ia-company-select').value);
@@ -425,6 +435,7 @@
       if(b){
         if(b.dataset.action==='crm') openCrm(b.dataset.id);
         if(b.dataset.action==='ia-real') openIaCompany(b.dataset.id);
+        if(b.dataset.action==='prompt') openPromptCompany(b.dataset.id);
         return;
       }
       const detail=e.target.closest('[data-detail-index]');
@@ -447,6 +458,26 @@
     $('#menu-btn').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
   }
 
+  async function syncCompaniesSilently() {
+    if (!session) return;
+    try {
+      const before = new Set(empresas.map(e => String(e.empresa_id)));
+      const data = await api('empresas',{});
+      const next = Array.isArray(data.empresas) ? data.empresas : [];
+      const added = next.filter(e => !before.has(String(e.empresa_id)));
+      empresas = next;
+      renderCompanySelectors();
+      renderCompanyLists();
+      renderStats();
+      if (added.length) {
+        await loadPrompts();
+        toast(`${added.length} nova empresa adicionada automaticamente à IA por Empresa.`);
+      }
+    } catch (error) {
+      console.warn('Sincronização automática de empresas:', error);
+    }
+  }
+
   async function bootData() {
     await loadEmpresas();
     await loadPrompts();
@@ -466,6 +497,8 @@
 
   async function init() {
     bindEvents();
+    window.addEventListener('focus', syncCompaniesSilently);
+    setInterval(syncCompaniesSilently, 20000);
     try { if(await getSession()) await bootData(); }
     catch(error){ showAuth(true); toast(error.message,true); }
   }
