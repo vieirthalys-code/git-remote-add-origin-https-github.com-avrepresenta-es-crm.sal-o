@@ -611,3 +611,35 @@ code {
   .history-filters { width: 100%; flex-direction: column; align-items: stretch; }
   .history-filters .compact-select { width: 100%; }
 }
+
+
+/* IA real por empresa — sem saldo interno */
+.simple-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ia-real-selector { display:flex; align-items:center; justify-content:space-between; gap:20px; }
+.ia-real-selector > div { max-width:760px; }
+.ia-real-grid { margin-top:18px; }
+.real-money-box {
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+}
+.real-money-box span { display:block; font-size:.9rem; color:var(--muted); margin-bottom:7px; }
+.real-money-box strong { font-size:1.65rem; color:var(--text); }
+.provider-actions { display:grid; gap:10px; margin-top:16px; }
+.prompt-real-panel { margin-top:18px; }
+.prompt-real-panel form { display:grid; gap:14px; }
+.prompt-actions { display:flex; justify-content:flex-end; }
+.real-only-note { margin-top:18px; }
+.real-only-note strong { display:block; margin-bottom:6px; }
+.real-only-note p { margin:0; color:var(--muted); }
+.company-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.prompt-state { min-width:118px; }
+
+@media (max-width: 760px) {
+  .simple-stats { grid-template-columns: 1fr; }
+  .ia-real-selector { align-items:stretch; flex-direction:column; }
+  .ia-real-selector .compact-select { width:100%; max-width:none; }
+  .prompt-actions .btn { width:100%; }
+}

@@ -1,0 +1,90 @@
+ADMIN SAAS — IA REAL POR EMPRESA
+
+ARQUITETURA DESTA VERSÃO
+- NÃO existe saldo interno no painel.
+- NÃO existe adicionar/retirar/definir crédito virtual.
+- NÃO existe controle por tokens no painel.
+- NÃO existe histórico de carteira interna.
+- O dinheiro é colocado SOMENTE no faturamento real da OpenAI ou do Google Cloud.
+- O painel consulta SOMENTE gasto real do provedor.
+- O único dado de comportamento da IA administrado no painel é o PROMPT DO GEMINI por empresa.
+
+IMPORTANTE SOBRE "ADICIONAR DINHEIRO"
+A OpenAI e o Google Cloud não oferecem aqui um endpoint de depósito que o CRM possa simular.
+Por isso, o botão "Adicionar dinheiro real" abre a cobrança oficial do provedor.
+O pagamento acontece no provedor, não no CRM.
+
+ISOLAMENTO REAL POR EMPRESA
+Para o dinheiro de uma empresa não se misturar com outra:
+- cada empresa deve usar sua própria organização/conta de faturamento OpenAI;
+- cada empresa deve usar seu próprio projeto/conta de faturamento Google Cloud.
+
+O backend consulta os dados por empresa_id.
+
+EMPRESA 5
+A configuração global que já estava funcionando pode continuar sendo usada para a empresa 5.
+Por padrão, BILLING_DEFAULT_EMPRESA_ID é 5.
+Se quiser trocar, crie no Cloudflare:
+BILLING_DEFAULT_EMPRESA_ID=<id>
+
+OPENAI POR EMPRESA
+Para empresa N, configure no Cloudflare:
+OPENAI_ADMIN_KEY_EMPRESA_N
+Opcionalmente:
+OPENAI_ORG_ID_EMPRESA_N
+OPENAI_ACCOUNT_LABEL_EMPRESA_N
+OPENAI_BILLING_URL_EMPRESA_N
+OPENAI_DEFAULT_CURRENCY_EMPRESA_N
+
+Para a empresa definida em BILLING_DEFAULT_EMPRESA_ID, o backend também aceita as variáveis globais antigas:
+OPENAI_BILLING_HEADERS_JSON
+OPENAI_BILLING_URL
+OPENAI_DEFAULT_CURRENCY
+
+GOOGLE/GEMINI POR EMPRESA
+As credenciais do aplicativo OAuth continuam globais:
+GOOGLE_OAUTH_CLIENT_ID
+GOOGLE_OAUTH_CLIENT_SECRET
+GOOGLE_OAUTH_STATE_SECRET
+GOOGLE_OAUTH_REDIRECT_URI
+
+Para empresa N:
+1. Abra:
+   /api/google/oauth/start?empresa_id=N
+2. Autorize a conta Google daquela empresa.
+3. Salve o refresh token como:
+   GOOGLE_OAUTH_REFRESH_TOKEN_EMPRESA_N
+4. Configure:
+   GOOGLE_CLOUD_PROJECT_ID_EMPRESA_N
+   GOOGLE_BILLING_TABLE_EMPRESA_N
+   GOOGLE_BIGQUERY_LOCATION_EMPRESA_N
+
+Para a empresa definida em BILLING_DEFAULT_EMPRESA_ID, o backend também aceita as variáveis globais antigas já configuradas:
+GOOGLE_OAUTH_REFRESH_TOKEN
+GOOGLE_CLOUD_PROJECT_ID
+GOOGLE_BILLING_TABLE
+GOOGLE_BIGQUERY_LOCATION
+
+PROMPT GEMINI
+O painel salva somente:
+empresa_id
+provedor = GEMINI
+prompt_sistema
+
+Ele usa a rota já existente:
+POST /webhook/crm-juridico/ia-admin/configuracao
+
+O workflow principal atualizado usa prompt_gemini no AGENTE WHATSAPP GEMINI e NÃO verifica saldo interno.
+
+ARQUIVOS PARA O GITHUB
+Suba na RAIZ do repositório:
+index.html
+css/creditos.css
+js/creditos.js
+functions/api/billing/summary.js
+functions/api/google/oauth/start.js
+functions/api/google/oauth/callback.js
+
+NÃO SUBA O WORKFLOW DO N8N NO GITHUB.
+O arquivo CRM_JURIDICO_IA_REAL_SEM_SALDO_INTERNO.json é para importar/atualizar diretamente no n8n.
+Ele foi gerado a partir do workflow atual e remove somente as etapas de bloqueio/débito do saldo interno, mantendo o restante do fluxo.
