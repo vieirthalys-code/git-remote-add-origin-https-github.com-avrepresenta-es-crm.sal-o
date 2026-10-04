@@ -1,0 +1,25 @@
+ADMIN SAAS — VISUAL AV REPRESENTAÇÕES + RESPONSIVIDADE
+
+Atualização visual somente do front-end do Admin SaaS.
+
+Arquivos alterados:
+- index.html
+- css/creditos.css
+- js/creditos.js (apenas comportamento do menu responsivo)
+- assets/av-logo.png
+
+O que foi ajustado:
+- Logo oficial AV Representações no login e no menu lateral.
+- Paleta branca, preta e laranja baseada na identidade visual enviada.
+- Layout responsivo para celular, tablet, notebook e desktop.
+- Menu lateral móvel com sobreposição e fechamento por toque/Escape.
+- Página Empresas em formato de cartões no celular.
+- Tabelas do CRM com rolagem horizontal segura quando necessário.
+- Cards de OpenAI/Gemini, prompt, diálogos e formulários reorganizados em telas pequenas.
+- Tipografia, espaçamentos, bordas, botões, estados e cards padronizados.
+- Nenhuma rota, endpoint, regra de cobrança, exclusão ou prompt foi removida.
+
+UPLOAD NO GITHUB
+Extraia o ZIP na raiz do projeto atual, substituindo os arquivos com os mesmos caminhos.
+Não crie um novo projeto.
+Não altere a pasta functions/ para esta atualização visual.

@@ -473,7 +473,7 @@
     $$('.nav-link').forEach(l=>l.classList.toggle('active',l.dataset.section===name));
     const titles = {'visao-geral':'Visão geral','empresas':'Empresas','crm-juridico':'CRM Jurídico','ia-empresa':'IA por Empresa'};
     $('#page-title').textContent = titles[name] || 'Admin SaaS';
-    if (window.innerWidth<900) $('#sidebar').classList.remove('open');
+    if (window.innerWidth<980) $('#sidebar').classList.remove('open');
   }
 
   function bindEvents() {
@@ -534,6 +534,9 @@
     }));
     $('#logout-btn').addEventListener('click',async()=>{ await supabase.auth.signOut(); session=null; crmCache.clear(); showAuth(true); toast('Sessão encerrada.'); });
     $('#menu-btn').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
+    $('#sidebar-backdrop')?.addEventListener('click',()=>$('#sidebar').classList.remove('open'));
+    window.addEventListener('resize',()=>{ if (window.innerWidth>=980) $('#sidebar').classList.remove('open'); });
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape') $('#sidebar').classList.remove('open'); });
   }
 
   async function syncCompaniesSilently() {

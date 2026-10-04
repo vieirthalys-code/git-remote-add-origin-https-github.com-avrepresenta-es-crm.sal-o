@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f97316">
+  <meta name="theme-color" content="#ea6831">
   <title>Admin SaaS | AV Representações & Tecnologia</title>
+  <link rel="icon" type="image/png" href="./assets/av-logo.png">
   <link rel="stylesheet" href="./css/creditos.css">
 </head>
 <body>
@@ -13,8 +14,8 @@
   <section id="auth-screen" class="auth-screen">
     <div class="auth-card">
       <div class="brand auth-brand">
-        <div class="brand-mark">AV</div>
-        <div><strong>Admin SaaS</strong><span>Controle do CRM Jurídico e IA</span></div>
+        <img class="brand-logo brand-logo-auth" src="./assets/av-logo.png" alt="AV Representações">
+        <div class="auth-brand-copy"><strong>Admin SaaS</strong><span>Controle do CRM Jurídico e IA</span></div>
       </div>
       <p class="eyebrow">ACESSO ADMINISTRATIVO</p>
       <h1>Entrar no Admin SaaS</h1>
@@ -34,9 +35,9 @@
 
   <div id="app" class="app hidden">
     <aside class="sidebar" id="sidebar">
-      <div class="brand">
-        <div class="brand-mark">AV</div>
-        <div><strong>Admin SaaS</strong><span>CRM Jurídico + IA</span></div>
+      <div class="brand sidebar-brand">
+        <img class="brand-logo brand-logo-sidebar" src="./assets/av-logo.png" alt="AV Representações">
+        <div class="sidebar-brand-copy"><strong>Admin SaaS</strong><span>CRM Jurídico + IA</span></div>
       </div>
 
       <nav class="nav">
@@ -51,6 +52,7 @@
         <button id="logout-btn" class="btn btn-ghost">Sair</button>
       </div>
     </aside>
+    <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Fechar menu"></button>
 
     <main class="main">
       <header class="topbar">
