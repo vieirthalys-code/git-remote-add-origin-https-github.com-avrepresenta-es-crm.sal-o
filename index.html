@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ea6831">
   <title>Admin SaaS | AV Representações & Tecnologia</title>
-  <link rel="icon" type="image/png" href="./assets/av-logo.png?v=20261004-1700">
-  <link rel="stylesheet" href="./css/creditos.css?v=20261004-1700">
+  <link rel="icon" type="image/png" href="./assets/av-logo.png?v=20261004-2245">
+  <link rel="stylesheet" href="./css/creditos.css?v=20261004-2245">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -14,7 +14,7 @@
   <section id="auth-screen" class="auth-screen">
     <div class="auth-card">
       <div class="brand auth-brand">
-        <img class="brand-logo brand-logo-auth" src="./assets/av-logo.png?v=20261004-1700" alt="AV Representações">
+        <img class="brand-logo brand-logo-auth" src="./assets/av-logo.png?v=20261004-2245" alt="AV Representações">
         <div class="auth-brand-copy"><strong>Admin SaaS</strong><span>Controle do CRM Jurídico e IA</span></div>
       </div>
       <p class="eyebrow">ACESSO ADMINISTRATIVO</p>
@@ -36,7 +36,7 @@
   <div id="app" class="app hidden">
     <aside class="sidebar" id="sidebar">
       <div class="brand sidebar-brand">
-        <img class="brand-logo brand-logo-sidebar" src="./assets/av-logo.png?v=20261004-1700" alt="AV Representações">
+        <img class="brand-logo brand-logo-sidebar" src="./assets/av-logo.png?v=20261004-2245" alt="AV Representações">
         <div class="sidebar-brand-copy"><strong>Admin SaaS</strong><span>CRM Jurídico + IA</span></div>
       </div>
 
@@ -65,6 +65,7 @@
         <div class="stats-grid simple-stats">
           <article class="stat-card"><span>Empresas</span><strong id="stat-empresas">0</strong></article>
           <article class="stat-card"><span>Prompts Gemini configurados</span><strong id="stat-prompts">0</strong></article>
+          <article class="stat-card"><span>Testes grátis ativos</span><strong id="stat-trials">0</strong></article>
         </div>
 
         <div class="panel">
@@ -85,6 +86,29 @@
       </section>
 
       <section id="empresas" class="section">
+        <div class="panel access-panel">
+          <div class="panel-head access-panel-head">
+            <div>
+              <p class="eyebrow">ACESSO DO CLIENTE</p>
+              <h2>Teste grátis e liberação manual</h2>
+              <p>Libere uma empresa por alguns dias sem alterar cobrança, contrato ou Asaas. Ao terminar a data, o login volta automaticamente para a regra normal de pagamento.</p>
+            </div>
+            <button id="access-refresh-btn" class="btn btn-secondary" type="button">Atualizar acessos</button>
+          </div>
+          <div class="access-kpis">
+            <div class="access-kpi"><span>Contas SaaS</span><strong id="access-total">0</strong></div>
+            <div class="access-kpi"><span>Em teste agora</span><strong id="access-active">0</strong></div>
+            <div class="access-kpi"><span>Sem teste ativo</span><strong id="access-inactive">0</strong></div>
+          </div>
+          <div id="access-companies" class="access-company-grid">
+            <div class="access-loading">
+              <span class="skeleton skeleton-line wide"></span>
+              <span class="skeleton skeleton-line"></span>
+              <span class="skeleton skeleton-line short"></span>
+            </div>
+          </div>
+        </div>
+
         <div class="panel">
           <div class="panel-head">
             <div><h2>Empresas</h2><p>Empresas cadastradas no CRM Jurídico.</p></div>
@@ -214,6 +238,47 @@
   </dialog>
 
 
+  <dialog id="trial-dialog" class="dialog trial-dialog">
+    <div class="dialog-head">
+      <div>
+        <p class="eyebrow">LIBERAÇÃO MANUAL</p>
+        <h2>Teste grátis</h2>
+      </div>
+      <button type="button" class="icon-btn" id="trial-close" aria-label="Fechar">×</button>
+    </div>
+
+    <div class="trial-target">
+      <span>Empresa selecionada</span>
+      <strong id="trial-company-name">—</strong>
+      <small id="trial-company-email">—</small>
+      <small id="trial-company-id">—</small>
+    </div>
+
+    <form id="trial-form">
+      <label>Escolha um período rápido</label>
+      <div class="trial-quick-grid" role="group" aria-label="Períodos de teste">
+        <button type="button" class="trial-quick-btn" data-trial-days="3">3 dias</button>
+        <button type="button" class="trial-quick-btn active" data-trial-days="7">7 dias</button>
+        <button type="button" class="trial-quick-btn" data-trial-days="15">15 dias</button>
+        <button type="button" class="trial-quick-btn" data-trial-days="30">30 dias</button>
+      </div>
+
+      <div class="trial-divider"><span>ou escolha a data final</span></div>
+
+      <label>Teste grátis até
+        <input id="trial-end-date" class="input" type="date">
+      </label>
+
+      <p id="trial-current-status" class="trial-current-status">Sem teste ativo.</p>
+
+      <div class="dialog-actions trial-actions">
+        <button type="button" class="btn btn-danger trial-end-btn" id="trial-end-now">Encerrar teste</button>
+        <button type="button" class="btn btn-secondary" id="trial-cancel">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="trial-save">Liberar acesso</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="delete-company-dialog" class="dialog delete-company-dialog">
     <div class="dialog-head">
       <div>
@@ -244,6 +309,6 @@
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/creditos.js?v=20261004-1700"></script>
+  <script src="./js/creditos.js?v=20261004-2245"></script>
 </body>
 </html>

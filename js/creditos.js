@@ -18,9 +18,13 @@
   let currentCrmModule = 'resumo';
   let toastTimer = null;
   let deleteCompanyTarget = null;
+  let accessRows = [];
+  let trialTarget = null;
+  let selectedTrialDays = 7;
 
   const fmt = new Intl.NumberFormat('pt-BR');
   const dateFmt = new Intl.DateTimeFormat('pt-BR', { dateStyle:'short', timeStyle:'short' });
+  const dateOnlyFmt = new Intl.DateTimeFormat('pt-BR', { dateStyle:'short' });
 
   function toast(message, error=false) {
     const el = $('#toast');
@@ -44,6 +48,20 @@
     if (!value) return '—';
     const d = new Date(value);
     return Number.isNaN(d.getTime()) ? String(value) : dateFmt.format(d);
+  }
+
+  function dateOnly(value) {
+    if (!value) return '—';
+    const raw = String(value).slice(0,10);
+    const d = new Date(`${raw}T12:00:00`);
+    return Number.isNaN(d.getTime()) ? raw : dateOnlyFmt.format(d);
+  }
+
+  function addDaysIso(days) {
+    const d = new Date();
+    d.setHours(12,0,0,0);
+    d.setDate(d.getDate() + Number(days || 0));
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
 
   function money(value, currency='USD') {
@@ -190,9 +208,95 @@
     renderStats();
   }
 
+  function normalizeAccessRows(data) {
+    const rows = Array.isArray(data?.dados) ? data.dados : (Array.isArray(data?.rows) ? data.rows : []);
+    return rows.map(row => ({
+      id: row.id ?? null,
+      empresa_id: String(row.empresa_id || ''),
+      empresa_nome: String(row.empresa_nome || row.nome || ''),
+      nome_fantasia: String(row.nome_fantasia || ''),
+      empresa_status: String(row.empresa_status || row.status || ''),
+      plano: String(row.plano || ''),
+      assinatura_status: String(row.assinatura_status || ''),
+      usuario_nome: String(row.usuario_nome || ''),
+      usuario_email: String(row.usuario_email || row.email || ''),
+      teste_gratis_ate: row.teste_gratis_ate || null,
+      teste_ativo: Boolean(row.teste_ativo),
+      dias_restantes: number(row.dias_restantes)
+    })).filter(row => row.empresa_id);
+  }
+
+  function accessStatusBadge(row) {
+    if (row.teste_ativo) {
+      const days = Math.max(0, number(row.dias_restantes));
+      return `<span class="badge on">Teste ativo · ${days} dia${days===1?'':'s'}</span>`;
+    }
+    if (row.teste_gratis_ate) return '<span class="badge neutral">Teste expirado</span>';
+    return '<span class="badge off">Sem teste</span>';
+  }
+
+  function renderAccessRows(errorMessage='') {
+    const container = $('#access-companies');
+    if (!container) return;
+    const active = accessRows.filter(row => row.teste_ativo).length;
+    $('#access-total').textContent = fmt.format(accessRows.length);
+    $('#access-active').textContent = fmt.format(active);
+    $('#access-inactive').textContent = fmt.format(Math.max(0, accessRows.length - active));
+
+    if (errorMessage) {
+      container.innerHTML = `<div class="access-error"><strong>Controle de teste grátis ainda não conectado.</strong><span>${escapeHtml(errorMessage)}</span><small>Importe e ative o workflow "ADMIN SAAS - TESTE GRÁTIS" que acompanha este pacote.</small></div>`;
+      renderStats();
+      return;
+    }
+    if (!accessRows.length) {
+      container.innerHTML = '<div class="empty">Nenhuma conta SaaS encontrada.</div>';
+      renderStats();
+      return;
+    }
+
+    container.innerHTML = accessRows.map(row => `
+      <article class="access-company-card ${row.teste_ativo?'active-trial':''}">
+        <div class="access-company-main">
+          <div class="access-company-title">
+            <strong>${escapeHtml(row.nome_fantasia || row.empresa_nome || 'Empresa')}</strong>
+            <span>${escapeHtml(row.usuario_email || 'Sem e-mail vinculado')}</span>
+          </div>
+          ${accessStatusBadge(row)}
+        </div>
+        <div class="access-company-meta">
+          <span><b>ID:</b> ${escapeHtml(row.empresa_id)}</span>
+          <span><b>Plano:</b> ${escapeHtml(row.plano || '—')}</span>
+          <span><b>Teste até:</b> ${row.teste_gratis_ate ? escapeHtml(dateOnly(row.teste_gratis_ate)) : '—'}</span>
+        </div>
+        <div class="access-company-actions">
+          <button class="btn btn-primary btn-small" type="button" data-action="trial" data-id="${escapeHtml(row.empresa_id)}">${row.teste_ativo?'Alterar teste':'Liberar teste grátis'}</button>
+          ${row.teste_ativo || row.teste_gratis_ate ? `<button class="btn btn-secondary btn-small" type="button" data-action="trial-end" data-id="${escapeHtml(row.empresa_id)}">Encerrar teste</button>` : ''}
+        </div>
+      </article>`).join('');
+    renderStats();
+  }
+
+  async function loadTrialAccess({silent=false}={}) {
+    if (!silent && $('#access-companies')) {
+      $('#access-companies').innerHTML = '<div class="access-loading"><span class="skeleton skeleton-line wide"></span><span class="skeleton skeleton-line"></span><span class="skeleton skeleton-line short"></span></div>';
+    }
+    try {
+      const data = await api('teste-gratis',{acao:'listar'});
+      accessRows = normalizeAccessRows(data);
+      renderAccessRows();
+      return accessRows;
+    } catch (error) {
+      accessRows = [];
+      renderAccessRows(error.message || 'Falha ao carregar acessos.');
+      if (!silent) console.warn('Teste grátis:', error);
+      return [];
+    }
+  }
+
   function renderStats() {
     $('#stat-empresas').textContent = fmt.format(empresas.length);
     $('#stat-prompts').textContent = fmt.format(empresas.filter(e => promptFor(e.empresa_id).trim()).length);
+    if ($('#stat-trials')) $('#stat-trials').textContent = fmt.format(accessRows.filter(row => row.teste_ativo).length);
   }
 
   function renderCompanySelectors() {
@@ -403,6 +507,72 @@
   }
 
 
+  function findAccessCompany(companyId) {
+    return accessRows.find(row => String(row.empresa_id) === String(companyId));
+  }
+
+  function syncTrialQuickButtons(days) {
+    selectedTrialDays = Number(days || 0);
+    $$('[data-trial-days]').forEach(button => button.classList.toggle('active', Number(button.dataset.trialDays) === selectedTrialDays));
+  }
+
+  function openTrialDialog(companyId) {
+    const row = findAccessCompany(companyId);
+    if (!row) { toast('Conta SaaS não encontrada.', true); return; }
+    trialTarget = row;
+    selectedTrialDays = 7;
+    $('#trial-company-name').textContent = row.nome_fantasia || row.empresa_nome || 'Empresa';
+    $('#trial-company-email').textContent = row.usuario_email || 'Sem e-mail vinculado';
+    $('#trial-company-id').textContent = `empresa_id ${row.empresa_id}`;
+    $('#trial-end-date').value = row.teste_ativo && row.teste_gratis_ate ? String(row.teste_gratis_ate).slice(0,10) : addDaysIso(7);
+    $('#trial-current-status').textContent = row.teste_ativo
+      ? `Teste ativo até ${dateOnly(row.teste_gratis_ate)} · ${Math.max(0,number(row.dias_restantes))} dia(s) restante(s).`
+      : (row.teste_gratis_ate ? `O último teste terminou em ${dateOnly(row.teste_gratis_ate)}.` : 'Sem teste ativo.');
+    $('#trial-end-now').disabled = !row.teste_ativo && !row.teste_gratis_ate;
+    syncTrialQuickButtons(7);
+    $('#trial-dialog').showModal();
+  }
+
+  function closeTrialDialog() {
+    if ($('#trial-dialog')?.open) $('#trial-dialog').close();
+    trialTarget = null;
+    selectedTrialDays = 7;
+  }
+
+  async function applyTrial(event) {
+    event.preventDefault();
+    if (!trialTarget) { toast('Selecione uma empresa.', true); return; }
+    const endDate = $('#trial-end-date').value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate)) { toast('Escolha uma data final válida.', true); return; }
+    const button = $('#trial-save');
+    button.disabled = true;
+    const previous = button.textContent;
+    button.textContent = 'Liberando...';
+    try {
+      await api('teste-gratis',{acao:'definir',empresa_id:trialTarget.empresa_id,data_fim:endDate});
+      await loadTrialAccess({silent:true});
+      closeTrialDialog();
+      toast(`Teste grátis liberado até ${dateOnly(endDate)}.`);
+    } catch(error) {
+      toast(error.message || 'Não foi possível liberar o teste.', true);
+    } finally {
+      button.disabled = false;
+      button.textContent = previous;
+    }
+  }
+
+  async function endTrialById(companyId, {closeDialog=false}={}) {
+    const row = findAccessCompany(companyId);
+    if (!row) { toast('Conta SaaS não encontrada.', true); return; }
+    try {
+      await api('teste-gratis',{acao:'encerrar',empresa_id:row.empresa_id});
+      await loadTrialAccess({silent:true});
+      if (closeDialog) closeTrialDialog();
+      toast(`Teste grátis encerrado para ${row.nome_fantasia || row.empresa_nome || row.empresa_id}.`);
+    } catch(error) {
+      toast(error.message || 'Não foi possível encerrar o teste.', true);
+    }
+  }
 
   function isProtectedCompany(company) {
     if (!company) return false;
@@ -450,8 +620,7 @@
       closeDeleteCompany();
       crmCache.clear();
       promptRows = promptRows.filter(r => String(r.empresa_id) !== String(company.empresa_id));
-      await loadEmpresas();
-      await loadPrompts();
+      await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true})]);
       if (empresas.length) {
         await openOverviewCompany(empresas[0].empresa_id);
         $('#ia-company-select').value = String(empresas[0].empresa_id);
@@ -479,16 +648,34 @@
   function bindEvents() {
     $('#login-form').addEventListener('submit',login);
     $('#refresh-btn').addEventListener('click',async()=>{
+      const button = $('#refresh-btn');
+      const previous = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Atualizando...';
       try {
         crmCache.clear();
-        await loadEmpresas();
-        await loadPrompts();
+        const results = await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true})]);
+        const coreError = results[0].status === 'rejected' ? results[0].reason : null;
+        if (coreError) throw coreError;
         const current = $('#ia-company-select').value;
         if ($('#ia-empresa').classList.contains('active') && current) await openIaCompany(current);
+        if ($('#visao-geral').classList.contains('active') && $('#overview-company-select').value) {
+          await openOverviewCompany($('#overview-company-select').value);
+        }
         toast('Dados atualizados.');
       } catch(e) { toast(e.message,true); }
+      finally { button.disabled = false; button.textContent = previous; }
     });
     $('#empresa-search').addEventListener('input',renderCompanyLists);
+    $('#access-refresh-btn').addEventListener('click',async e=>{
+      const button = e.currentTarget;
+      const previous = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Atualizando...';
+      await loadTrialAccess();
+      button.disabled = false;
+      button.textContent = previous;
+    });
     $('#crm-company-select').addEventListener('change',e=>openCrm(e.target.value,currentCrmModule));
     $('#overview-company-select').addEventListener('change',e=>openOverviewCompany(e.target.value));
     $('#ia-company-select').addEventListener('change',e=>openIaCompany(e.target.value));
@@ -506,6 +693,8 @@
         if(b.dataset.action==='crm') openCrm(b.dataset.id);
         if(b.dataset.action==='ia-real') openIaCompany(b.dataset.id);
         if(b.dataset.action==='prompt') openPromptCompany(b.dataset.id);
+        if(b.dataset.action==='trial') openTrialDialog(b.dataset.id);
+        if(b.dataset.action==='trial-end') endTrialById(b.dataset.id);
         if(b.dataset.action==='delete-company') openDeleteCompany(b.dataset.id);
         return;
       }
@@ -518,6 +707,25 @@
     });
 
     $('#detail-close').addEventListener('click',()=>$('#detail-dialog').close());
+    $('#trial-close').addEventListener('click', closeTrialDialog);
+    $('#trial-cancel').addEventListener('click', closeTrialDialog);
+    $('#trial-form').addEventListener('submit', applyTrial);
+    $('#trial-end-now').addEventListener('click', async()=>{
+      if (!trialTarget) return;
+      const button = $('#trial-end-now');
+      const previous = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Encerrando...';
+      await endTrialById(trialTarget.empresa_id,{closeDialog:true});
+      button.disabled = false;
+      button.textContent = previous;
+    });
+    $$('[data-trial-days]').forEach(button => button.addEventListener('click',()=>{
+      const days = Number(button.dataset.trialDays);
+      syncTrialQuickButtons(days);
+      $('#trial-end-date').value = addDaysIso(days);
+    }));
+    $('#trial-end-date').addEventListener('input',()=>syncTrialQuickButtons(0));
     $('#delete-company-close').addEventListener('click', closeDeleteCompany);
     $('#delete-company-cancel').addEventListener('click', closeDeleteCompany);
     $('#delete-company-form').addEventListener('submit', deleteCompany);
@@ -557,26 +765,34 @@
   }
 
   async function bootData() {
-    await loadEmpresas();
-    await loadPrompts();
-    if(empresas.length){
-      await openOverviewCompany(empresas[0].empresa_id);
-      $('#ia-company-select').value = String(empresas[0].empresa_id);
-      $('#prompt-company-meta').textContent = `${empresas[0].empresa_nome} · empresa_id ${empresas[0].empresa_id}`;
-      $('#prompt-gemini').value = promptFor(empresas[0].empresa_id);
-      $('#google-connect-link').href = `/api/google/oauth/start?empresa_id=${encodeURIComponent(empresas[0].empresa_id)}`;
-    }
+    const results = await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true})]);
+    if (results[0].status === 'rejected') throw results[0].reason;
+
     const initial=location.hash.replace('#','');
-    if(initial && $('#'+initial)) {
-      showSection(initial);
-      if(initial==='ia-empresa' && empresas.length) await openIaCompany($('#ia-company-select').value);
+    if(initial && $('#'+initial)) showSection(initial);
+
+    if(empresas.length){
+      const firstId = empresas[0].empresa_id;
+      $('#ia-company-select').value = String(firstId);
+      $('#prompt-company-meta').textContent = `${empresas[0].empresa_nome} · empresa_id ${firstId}`;
+      $('#prompt-gemini').value = promptFor(firstId);
+      $('#google-connect-link').href = `/api/google/oauth/start?empresa_id=${encodeURIComponent(firstId)}`;
+
+      if(initial==='ia-empresa') {
+        await openIaCompany($('#ia-company-select').value);
+      } else {
+        $('#overview-company-details').innerHTML = '<div class="detail-card skeleton-card"><span class="skeleton skeleton-line"></span><strong class="skeleton skeleton-line wide"></strong></div>';
+        const runOverview = () => openOverviewCompany($('#overview-company-select').value || firstId);
+        if ('requestIdleCallback' in window) requestIdleCallback(runOverview,{timeout:700});
+        else setTimeout(runOverview,60);
+      }
     }
   }
 
   async function init() {
     bindEvents();
     window.addEventListener('focus', syncCompaniesSilently);
-    setInterval(syncCompaniesSilently, 20000);
+    setInterval(syncCompaniesSilently, 60000);
     try { if(await getSession()) await bootData(); }
     catch(error){ showAuth(true); toast(error.message,true); }
   }
