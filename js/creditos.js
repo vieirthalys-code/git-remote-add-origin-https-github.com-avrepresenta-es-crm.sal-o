@@ -21,6 +21,8 @@
   let accessRows = [];
   let trialTarget = null;
   let selectedTrialDays = 7;
+  let contractData = {clientes:[], produtos:[], contratos:[], configuracao:{}};
+  let contractCancelTarget = null;
 
   const fmt = new Intl.NumberFormat('pt-BR');
   const dateFmt = new Intl.DateTimeFormat('pt-BR', { dateStyle:'short', timeStyle:'short' });
@@ -149,6 +151,238 @@
     if (!response.ok) throw new Error(data?.erro || data?.message || `HTTP ${response.status}`);
     if (data?.ok === false) throw new Error(data.erro || data.message || 'Operação não autorizada.');
     return data;
+  }
+
+
+  async function contractsApi(path, {method='GET', body=null}={}) {
+    if (!session) throw new Error('Sessão expirada.');
+    const response = await fetch(`/api/contratos/${encodeURIComponent(path)}`, {
+      method,
+      headers:{
+        'Accept':'application/json',
+        'Authorization':`Bearer ${session.access_token}`,
+        ...(body ? {'Content-Type':'application/json'} : {})
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      cache:'no-store'
+    });
+    const raw = await response.text();
+    let data;
+    try { data = raw ? JSON.parse(raw) : {}; }
+    catch { throw new Error(`Resposta inválida do módulo de contratos (${response.status}).`); }
+    if (!response.ok) throw new Error(data?.mensagem || data?.erro || data?.message || `HTTP ${response.status}`);
+    if (data?.ok === false) throw new Error(data?.mensagem || data?.erro || 'Operação recusada.');
+    return data;
+  }
+
+  function moneyBRL(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return '—';
+    return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
+  }
+
+  function contractStatusClass(status) {
+    const s = String(status || '').toUpperCase();
+    if (['ATIVO','ENCERRADO'].includes(s)) return 'on';
+    if (['EM_TOLERANCIA','AGUARDANDO_PAGAMENTO'].includes(s)) return 'neutral';
+    return 'off';
+  }
+
+  function contractStatusLabel(status) {
+    const labels = {
+      AGUARDANDO_PAGAMENTO:'Aguardando pagamento',
+      ATIVO:'Ativo',
+      EM_TOLERANCIA:'Em tolerância',
+      BLOQUEADO:'Bloqueado',
+      ENCERRADO:'Encerrado',
+      CANCELADO:'Cancelado'
+    };
+    const s = String(status || '').toUpperCase();
+    return labels[s] || s || '—';
+  }
+
+  function renderContractStats() {
+    const rows = contractData.contratos || [];
+    const access = rows.filter(r => Boolean(r.acesso_liberado)).length;
+    const waiting = rows.filter(r => String(r.status || '').toUpperCase() === 'AGUARDANDO_PAGAMENTO').length;
+    const blocked = rows.filter(r => String(r.status || '').toUpperCase() === 'BLOQUEADO').length;
+    if ($('#contract-stat-total')) $('#contract-stat-total').textContent = fmt.format(rows.length);
+    if ($('#contract-stat-access')) $('#contract-stat-access').textContent = fmt.format(access);
+    if ($('#contract-stat-waiting')) $('#contract-stat-waiting').textContent = fmt.format(waiting);
+    if ($('#contract-stat-blocked')) $('#contract-stat-blocked').textContent = fmt.format(blocked);
+  }
+
+  function renderContractProducts() {
+    const target = $('#contract-products-grid');
+    if (!target) return;
+    const products = contractData.produtos || [];
+    target.innerHTML = products.length ? products.map(p => `
+      <article class="contract-product-card">
+        <div class="contract-product-top">
+          <span class="contract-product-id">#${escapeHtml(p.id)}</span>
+          <span class="badge ${p.ativo ? 'on' : 'off'}">${p.ativo ? 'Ativo' : 'Inativo'}</span>
+        </div>
+        <strong>${escapeHtml(p.nome)}</strong>
+        <small>${escapeHtml(p.codigo)}</small>
+      </article>
+    `).join('') : '<div class="empty">Nenhum produto ativo encontrado.</div>';
+  }
+
+  function renderContractSelectors() {
+    const company = $('#contract-company');
+    const product = $('#contract-product');
+    if (company) {
+      const previous = company.value;
+      company.innerHTML = '<option value="">Selecione o cliente</option>' + (contractData.clientes || []).map(c => `
+        <option value="${escapeHtml(c.empresa_id)}">${escapeHtml(c.nome_fantasia || c.nome || c.empresa_id)} · ${escapeHtml(c.email || 'sem e-mail')}</option>
+      `).join('');
+      if ([...company.options].some(o => o.value === previous)) company.value = previous;
+    }
+    if (product) {
+      const previous = product.value;
+      product.innerHTML = '<option value="">Selecione o produto</option>' + (contractData.produtos || []).map(p => `
+        <option value="${escapeHtml(p.codigo)}">${escapeHtml(p.nome)} · ${escapeHtml(p.codigo)}</option>
+      `).join('');
+      if ([...product.options].some(o => o.value === previous)) product.value = previous;
+    }
+  }
+
+  function contractRow(r) {
+    const cancelable = ['AGUARDANDO_PAGAMENTO','ATIVO','EM_TOLERANCIA','BLOQUEADO'].includes(String(r.status || '').toUpperCase());
+    const access = Boolean(r.acesso_liberado);
+    const extras = [
+      r.agente_ia_liberado ? '<span class="feature-chip">IA</span>' : '',
+      r.whatsapp_liberado ? '<span class="feature-chip">WhatsApp</span>' : ''
+    ].filter(Boolean).join('');
+    return `<tr>
+      <td><strong>${escapeHtml(r.empresa_nome || r.empresa_id || '—')}</strong><small class="table-sub">${escapeHtml(r.empresa_id || '')}</small></td>
+      <td><strong>${escapeHtml(r.produto_nome || r.produto_codigo || '—')}</strong><small class="table-sub">${escapeHtml(r.produto_codigo || '')}</small></td>
+      <td>${moneyBRL(r.valor_parcela)}</td>
+      <td>${escapeHtml(r.parcelas_pagas ?? 0)} / ${escapeHtml(r.quantidade_parcelas ?? '—')}</td>
+      <td>${dateOnly(r.proximo_vencimento || r.primeiro_vencimento)}</td>
+      <td><span class="badge ${contractStatusClass(r.status)}">${escapeHtml(contractStatusLabel(r.status))}</span></td>
+      <td><div class="access-cell"><span class="badge ${access ? 'on' : 'off'}">${access ? 'Liberado' : 'Bloqueado'}</span>${extras}</div></td>
+      <td>${cancelable ? `<button class="btn btn-danger btn-small" data-contract-action="cancel" data-contract-id="${escapeHtml(r.contrato_id)}">Cancelar</button>` : '<span class="muted-text">—</span>'}</td>
+    </tr>`;
+  }
+
+  function renderContractsTable() {
+    const body = $('#contracts-body');
+    if (!body) return;
+    const q = String($('#contract-search')?.value || '').trim().toLowerCase();
+    const rows = (contractData.contratos || []).filter(r => !q || [r.empresa_nome,r.empresa_id,r.produto_nome,r.produto_codigo,r.status,r.forma_pagamento].some(v => String(v || '').toLowerCase().includes(q)));
+    body.innerHTML = rows.length ? rows.map(contractRow).join('') : '<tr><td colspan="8" class="empty">Nenhum contrato encontrado.</td></tr>';
+  }
+
+  function renderContracts() {
+    renderContractStats();
+    renderContractProducts();
+    renderContractSelectors();
+    renderContractsTable();
+  }
+
+  async function loadContracts({silent=false}={}) {
+    if ($('#contracts-body') && !silent) $('#contracts-body').innerHTML = '<tr><td colspan="8" class="empty">Carregando contratos...</td></tr>';
+    try {
+      const data = await contractsApi('bootstrap');
+      contractData = {
+        clientes:Array.isArray(data.clientes) ? data.clientes : [],
+        produtos:Array.isArray(data.produtos) ? data.produtos : [],
+        contratos:Array.isArray(data.contratos) ? data.contratos : [],
+        configuracao:data.configuracao || {}
+      };
+      renderContracts();
+      return true;
+    } catch (error) {
+      if ($('#contracts-body')) $('#contracts-body').innerHTML = `<tr><td colspan="8" class="empty">${escapeHtml(error.message || 'Não foi possível carregar contratos.')}</td></tr>`;
+      if (!silent) toast(error.message || 'Não foi possível carregar contratos.', true);
+      console.warn('Contratos:', error);
+      return false;
+    }
+  }
+
+  function syncContractCompanyFields() {
+    const id = $('#contract-company')?.value || '';
+    const row = (contractData.clientes || []).find(c => String(c.empresa_id) === String(id));
+    if (!row) return;
+    $('#contract-document').value = String(row.documento || '');
+    $('#contract-email').value = String(row.email || '');
+    $('#contract-phone').value = String(row.telefone || '');
+  }
+
+  async function createContract(event) {
+    event.preventDefault();
+    const button = $('#contract-create-btn');
+    const payload = {
+      empresa_id:$('#contract-company').value,
+      produto_codigo:$('#contract-product').value,
+      valor_parcela:Number($('#contract-value').value || 0),
+      quantidade_parcelas:Number($('#contract-installments').value || 0),
+      forma_pagamento:$('#contract-payment').value,
+      primeiro_vencimento:$('#contract-first-due').value,
+      cpf_cnpj:$('#contract-document').value,
+      email:$('#contract-email').value,
+      telefone:$('#contract-phone').value,
+      dias_tolerancia:Number($('#contract-tolerance').value || 3)
+    };
+    if (!payload.empresa_id || !payload.produto_codigo || !payload.primeiro_vencimento || !payload.cpf_cnpj || payload.valor_parcela <= 0 || payload.quantidade_parcelas < 1) {
+      toast('Preencha cliente, produto, CPF/CNPJ, valor, parcelas e vencimento.', true);
+      return;
+    }
+    button.disabled = true;
+    const previous = button.textContent;
+    button.textContent = 'Criando...';
+    try {
+      const result = await contractsApi('criar',{method:'POST',body:payload});
+      toast(result?.mensagem || 'Contrato criado com sucesso.');
+      $('#contract-form').reset();
+      $('#contract-installments').value = '12';
+      $('#contract-payment').value = 'PIX';
+      $('#contract-tolerance').value = '3';
+      const due = addDaysIso(1);
+      $('#contract-first-due').value = due;
+      $('#contract-first-due').min = addDaysIso(0);
+      await loadContracts({silent:true});
+    } catch (error) {
+      toast(error.message || 'Não foi possível criar o contrato.', true);
+    } finally {
+      button.disabled = false;
+      button.textContent = previous;
+    }
+  }
+
+  function openContractCancel(id) {
+    const row = (contractData.contratos || []).find(r => String(r.contrato_id) === String(id));
+    if (!row) { toast('Contrato não encontrado.', true); return; }
+    contractCancelTarget = row;
+    $('#contract-cancel-company').textContent = row.empresa_nome || row.empresa_id || '—';
+    $('#contract-cancel-product').textContent = `${row.produto_nome || row.produto_codigo || 'Produto'} · ${contractStatusLabel(row.status)}`;
+    $('#contract-cancel-id').textContent = `Contrato #${row.contrato_id}`;
+    $('#contract-cancel-dialog').showModal();
+  }
+
+  function closeContractCancel() {
+    if ($('#contract-cancel-dialog')?.open) $('#contract-cancel-dialog').close();
+    contractCancelTarget = null;
+  }
+
+  async function confirmContractCancel() {
+    if (!contractCancelTarget) return;
+    const button = $('#contract-cancel-confirm');
+    const previous = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Cancelando...';
+    try {
+      const result = await contractsApi('cancelar',{method:'POST',body:{contrato_id:Number(contractCancelTarget.contrato_id)}});
+      closeContractCancel();
+      toast(result?.mensagem || 'Contrato cancelado.');
+      await loadContracts({silent:true});
+    } catch (error) {
+      toast(error.message || 'Não foi possível cancelar o contrato.', true);
+    } finally {
+      button.disabled = false;
+      button.textContent = previous;
+    }
   }
 
   function normalizePromptRows(data) {
@@ -620,7 +854,7 @@
       closeDeleteCompany();
       crmCache.clear();
       promptRows = promptRows.filter(r => String(r.empresa_id) !== String(company.empresa_id));
-      await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true})]);
+      await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true}),loadContracts({silent:true})]);
       if (empresas.length) {
         await openOverviewCompany(empresas[0].empresa_id);
         $('#ia-company-select').value = String(empresas[0].empresa_id);
@@ -640,7 +874,7 @@
   function showSection(name) {
     $$('.section').forEach(s=>s.classList.toggle('active',s.id===name));
     $$('.nav-link').forEach(l=>l.classList.toggle('active',l.dataset.section===name));
-    const titles = {'visao-geral':'Visão geral','empresas':'Empresas','crm-juridico':'CRM Jurídico','ia-empresa':'IA por Empresa'};
+    const titles = {'visao-geral':'Visão geral','empresas':'Empresas','contratos':'Contratos & Planos','crm-juridico':'CRM Jurídico','ia-empresa':'IA por Empresa'};
     $('#page-title').textContent = titles[name] || 'Admin SaaS';
     if (window.innerWidth<900) $('#sidebar').classList.remove('open');
   }
@@ -654,7 +888,7 @@
       button.textContent = 'Atualizando...';
       try {
         crmCache.clear();
-        const results = await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true})]);
+        const results = await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true}),loadContracts({silent:true})]);
         const coreError = results[0].status === 'rejected' ? results[0].reason : null;
         if (coreError) throw coreError;
         const current = $('#ia-company-select').value;
@@ -676,6 +910,21 @@
       button.disabled = false;
       button.textContent = previous;
     });
+    $('#contracts-refresh-btn').addEventListener('click',async e=>{
+      const button = e.currentTarget;
+      const previous = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Atualizando...';
+      await loadContracts();
+      button.disabled = false;
+      button.textContent = previous;
+    });
+    $('#contract-search').addEventListener('input',renderContractsTable);
+    $('#contract-company').addEventListener('change',syncContractCompanyFields);
+    $('#contract-form').addEventListener('submit',createContract);
+    $('#contract-cancel-close').addEventListener('click',closeContractCancel);
+    $('#contract-cancel-back').addEventListener('click',closeContractCancel);
+    $('#contract-cancel-confirm').addEventListener('click',confirmContractCancel);
     $('#crm-company-select').addEventListener('change',e=>openCrm(e.target.value,currentCrmModule));
     $('#overview-company-select').addEventListener('change',e=>openOverviewCompany(e.target.value));
     $('#ia-company-select').addEventListener('change',e=>openIaCompany(e.target.value));
@@ -696,6 +945,11 @@
         if(b.dataset.action==='trial') openTrialDialog(b.dataset.id);
         if(b.dataset.action==='trial-end') endTrialById(b.dataset.id);
         if(b.dataset.action==='delete-company') openDeleteCompany(b.dataset.id);
+        return;
+      }
+      const contractAction=e.target.closest('[data-contract-action]');
+      if(contractAction){
+        if(contractAction.dataset.contractAction==='cancel') openContractCancel(contractAction.dataset.contractId);
         return;
       }
       const detail=e.target.closest('[data-detail-index]');
@@ -739,6 +993,7 @@
       showSection(section);
       history.replaceState(null,'','#'+section);
       if(section==='ia-empresa' && $('#ia-company-select').value) openIaCompany($('#ia-company-select').value);
+      if(section==='contratos' && !(contractData.contratos || []).length) loadContracts();
     }));
     $('#logout-btn').addEventListener('click',async()=>{ await supabase.auth.signOut(); session=null; crmCache.clear(); showAuth(true); toast('Sessão encerrada.'); });
     $('#menu-btn').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
@@ -765,7 +1020,7 @@
   }
 
   async function bootData() {
-    const results = await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true})]);
+    const results = await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true}),loadContracts({silent:true})]);
     if (results[0].status === 'rejected') throw results[0].reason;
 
     const initial=location.hash.replace('#','');
@@ -791,6 +1046,7 @@
 
   async function init() {
     bindEvents();
+    if ($('#contract-first-due')) { $('#contract-first-due').min = addDaysIso(0); $('#contract-first-due').value = addDaysIso(1); }
     window.addEventListener('focus', syncCompaniesSilently);
     setInterval(syncCompaniesSilently, 60000);
     try { if(await getSession()) await bootData(); }

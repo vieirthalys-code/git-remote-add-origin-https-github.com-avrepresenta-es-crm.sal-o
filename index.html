@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ea6831">
   <title>Admin SaaS | AV Representações & Tecnologia</title>
-  <link rel="icon" type="image/png" href="./assets/av-logo.png?v=20261004-2245">
-  <link rel="stylesheet" href="./css/creditos.css?v=20261004-2245">
+  <link rel="icon" type="image/png" href="./assets/av-logo.png?v=20261005-contratos">
+  <link rel="stylesheet" href="./css/creditos.css?v=20261005-contratos">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -14,7 +14,7 @@
   <section id="auth-screen" class="auth-screen">
     <div class="auth-card">
       <div class="brand auth-brand">
-        <img class="brand-logo brand-logo-auth" src="./assets/av-logo.png?v=20261004-2245" alt="AV Representações">
+        <img class="brand-logo brand-logo-auth" src="./assets/av-logo.png?v=20261005-contratos" alt="AV Representações">
         <div class="auth-brand-copy"><strong>Admin SaaS</strong><span>Controle do CRM Jurídico e IA</span></div>
       </div>
       <p class="eyebrow">ACESSO ADMINISTRATIVO</p>
@@ -36,13 +36,14 @@
   <div id="app" class="app hidden">
     <aside class="sidebar" id="sidebar">
       <div class="brand sidebar-brand">
-        <img class="brand-logo brand-logo-sidebar" src="./assets/av-logo.png?v=20261004-2245" alt="AV Representações">
+        <img class="brand-logo brand-logo-sidebar" src="./assets/av-logo.png?v=20261005-contratos" alt="AV Representações">
         <div class="sidebar-brand-copy"><strong>Admin SaaS</strong><span>CRM Jurídico + IA</span></div>
       </div>
 
       <nav class="nav">
         <a class="nav-link active" href="#visao-geral" data-section="visao-geral">Visão geral</a>
         <a class="nav-link" href="#empresas" data-section="empresas">Empresas</a>
+        <a class="nav-link" href="#contratos" data-section="contratos">Contratos & Planos</a>
         <a class="nav-link" href="#crm-juridico" data-section="crm-juridico">CRM Jurídico</a>
         <a class="nav-link" href="#ia-empresa" data-section="ia-empresa">IA por Empresa</a>
       </nav>
@@ -118,6 +119,108 @@
             <table>
               <thead><tr><th>Empresa</th><th>ID</th><th>Status</th><th>Prompt Gemini</th><th>Ações</th></tr></thead>
               <tbody id="empresas-body"><tr><td colspan="5" class="empty">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <section id="contratos" class="section">
+        <div class="stats-grid contract-stats">
+          <article class="stat-card"><span>Contratos</span><strong id="contract-stat-total">0</strong></article>
+          <article class="stat-card"><span>Acesso liberado</span><strong id="contract-stat-access">0</strong></article>
+          <article class="stat-card"><span>Aguardando pagamento</span><strong id="contract-stat-waiting">0</strong></article>
+          <article class="stat-card"><span>Bloqueados</span><strong id="contract-stat-blocked">0</strong></article>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head contracts-head">
+            <div>
+              <p class="eyebrow">PRODUTOS SAAS</p>
+              <h2>Planos disponíveis</h2>
+              <p>Produtos ativos cadastrados no controle central da AV Tecnologias.</p>
+            </div>
+            <button id="contracts-refresh-btn" class="btn btn-secondary" type="button">Atualizar contratos</button>
+          </div>
+          <div id="contract-products-grid" class="contract-products-grid">
+            <div class="empty">Carregando produtos...</div>
+          </div>
+        </div>
+
+        <div class="panel contract-create-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">NOVO CONTRATO</p>
+              <h2>Criar assinatura</h2>
+              <p>Cria o contrato no banco central e registra a assinatura recorrente no Asaas.</p>
+            </div>
+          </div>
+          <form id="contract-form" class="contract-form-grid">
+            <label class="contract-field contract-span-2">Cliente
+              <select id="contract-company" class="input" required></select>
+            </label>
+            <label class="contract-field contract-span-2">Produto
+              <select id="contract-product" class="input" required></select>
+            </label>
+            <label class="contract-field">Valor da parcela (R$)
+              <input id="contract-value" class="input" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="199,90" required>
+            </label>
+            <label class="contract-field">Quantidade de parcelas
+              <input id="contract-installments" class="input" type="number" min="1" max="120" step="1" value="12" required>
+            </label>
+            <label class="contract-field">Forma de pagamento
+              <select id="contract-payment" class="input" required>
+                <option value="PIX">PIX</option>
+                <option value="BOLETO">Boleto</option>
+                <option value="CREDIT_CARD">Cartão de crédito</option>
+              </select>
+            </label>
+            <label class="contract-field">Primeiro vencimento
+              <input id="contract-first-due" class="input" type="date" required>
+            </label>
+            <label class="contract-field">CPF/CNPJ do cliente
+              <input id="contract-document" class="input" type="text" inputmode="numeric" maxlength="18" placeholder="Obrigatório se não estiver no cadastro" required>
+            </label>
+            <label class="contract-field">E-mail financeiro
+              <input id="contract-email" class="input" type="email" placeholder="cliente@empresa.com">
+            </label>
+            <label class="contract-field">Telefone
+              <input id="contract-phone" class="input" type="tel" inputmode="tel" placeholder="5586999999999">
+            </label>
+            <label class="contract-field">Dias de tolerância
+              <input id="contract-tolerance" class="input" type="number" min="0" max="30" step="1" value="3" required>
+            </label>
+            <div class="contract-form-actions contract-span-4">
+              <p class="contract-form-note">O acesso só será liberado conforme as regras financeiras do contrato e confirmação de pagamento.</p>
+              <button id="contract-create-btn" class="btn btn-primary" type="submit">Criar contrato no Asaas</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head contracts-list-head">
+            <div>
+              <p class="eyebrow">CONTRATOS</p>
+              <h2>Contratos e acessos</h2>
+              <p>Acompanhe produto, cobrança, vencimento e liberação do cliente.</p>
+            </div>
+            <input id="contract-search" class="input search" type="search" placeholder="Pesquisar cliente, produto ou status...">
+          </div>
+          <div class="table-wrap contract-table-wrap">
+            <table class="contract-table">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Produto</th>
+                  <th>Valor</th>
+                  <th>Parcelas</th>
+                  <th>Próximo vencimento</th>
+                  <th>Status</th>
+                  <th>Acesso</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="contracts-body"><tr><td colspan="8" class="empty">Carregando contratos...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -232,6 +335,31 @@
     </main>
   </div>
 
+
+  <dialog id="contract-cancel-dialog" class="dialog contract-cancel-dialog">
+    <div class="dialog-head">
+      <div>
+        <p class="eyebrow">CANCELAMENTO</p>
+        <h2>Cancelar contrato</h2>
+      </div>
+      <button type="button" class="icon-btn" id="contract-cancel-close" aria-label="Fechar">×</button>
+    </div>
+    <div class="contract-cancel-summary">
+      <span>Contrato selecionado</span>
+      <strong id="contract-cancel-company">—</strong>
+      <small id="contract-cancel-product">—</small>
+      <small id="contract-cancel-id">—</small>
+    </div>
+    <div class="delete-warning">
+      <strong>A recorrência será encerrada.</strong>
+      <p>Quando houver assinatura no Asaas, o sistema tenta cancelá-la primeiro. O contrato local só é marcado como cancelado após a operação prevista no backend.</p>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" id="contract-cancel-back">Voltar</button>
+      <button type="button" class="btn btn-danger" id="contract-cancel-confirm">Cancelar contrato</button>
+    </div>
+  </dialog>
+
   <dialog id="detail-dialog" class="dialog wide-dialog">
     <div class="dialog-head"><div><p class="eyebrow">REGISTRO COMPLETO</p><h2 id="detail-title">Detalhes</h2></div><button type="button" class="icon-btn" id="detail-close">×</button></div>
     <pre id="detail-json" class="json-view"></pre>
@@ -309,6 +437,6 @@
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/creditos.js?v=20261004-2245"></script>
+  <script src="./js/creditos.js?v=20261005-contratos"></script>
 </body>
 </html>
