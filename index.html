@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ea6831">
   <title>Admin SaaS | AV Representações & Tecnologia</title>
   <link rel="icon" type="image/png" href="./assets/av-logo.png?v=20261005-contratos">
-  <link rel="stylesheet" href="./css/creditos.css?v=20261005-contratos">
+  <link rel="stylesheet" href="./css/creditos.css?v=20261005-asaas-primeiro">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -147,52 +147,67 @@
           </div>
         </div>
 
+        <div class="panel">
+          <div class="panel-head contracts-list-head">
+            <div>
+              <p class="eyebrow">ASSINATURAS DO ASAAS</p>
+              <h2>Buscar e importar do Asaas</h2>
+              <p>Cadastre a cobrança primeiro no Asaas. Depois escolha aqui qual empresa e produto da AV essa assinatura deve liberar.</p>
+            </div>
+            <div class="contract-head-actions">
+              <input id="asaas-subscription-search" class="input search" type="search" placeholder="Pesquisar cliente, descrição ou status...">
+              <button id="asaas-refresh-btn" class="btn btn-secondary" type="button">Atualizar Asaas</button>
+            </div>
+          </div>
+          <div class="table-wrap contract-table-wrap">
+            <table class="contract-table asaas-subscription-table">
+              <thead>
+                <tr>
+                  <th>Cliente Asaas</th>
+                  <th>Descrição</th>
+                  <th>Valor</th>
+                  <th>Pagamento</th>
+                  <th>Vencimento</th>
+                  <th>Status</th>
+                  <th>Vínculo</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="asaas-subscriptions-body"><tr><td colspan="8" class="empty">Clique em “Atualizar Asaas” para consultar as assinaturas.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="panel contract-create-panel">
           <div class="panel-head">
             <div>
-              <p class="eyebrow">NOVO CONTRATO</p>
-              <h2>Criar assinatura</h2>
-              <p>Cria o contrato no banco central e registra a assinatura recorrente no Asaas.</p>
+              <p class="eyebrow">VINCULAR AO SAAS</p>
+              <h2>Importar assinatura selecionada</h2>
+              <p>Valor, forma de pagamento e vencimento vêm diretamente do Asaas. Aqui você define apenas qual empresa e qual produto serão liberados.</p>
             </div>
           </div>
+          <div id="asaas-selected-summary" class="asaas-selected-summary">
+            <span>Nenhuma assinatura selecionada.</span>
+            <strong>Escolha “Vincular” em uma assinatura acima.</strong>
+          </div>
           <form id="contract-form" class="contract-form-grid">
-            <label class="contract-field contract-span-2">Cliente
+            <input id="contract-asaas-id" type="hidden" value="">
+            <label class="contract-field contract-span-2">Empresa no CRM
               <select id="contract-company" class="input" required></select>
             </label>
-            <label class="contract-field contract-span-2">Produto
+            <label class="contract-field contract-span-2">Produto / Plano AV
               <select id="contract-product" class="input" required></select>
             </label>
-            <label class="contract-field">Valor da parcela (R$)
-              <input id="contract-value" class="input" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="199,90" required>
-            </label>
-            <label class="contract-field">Quantidade de parcelas
-              <input id="contract-installments" class="input" type="number" min="1" max="120" step="1" value="12" required>
-            </label>
-            <label class="contract-field">Forma de pagamento
-              <select id="contract-payment" class="input" required>
-                <option value="PIX">PIX</option>
-                <option value="BOLETO">Boleto</option>
-                <option value="CREDIT_CARD">Cartão de crédito</option>
-              </select>
-            </label>
-            <label class="contract-field">Primeiro vencimento
-              <input id="contract-first-due" class="input" type="date" required>
-            </label>
-            <label class="contract-field">CPF/CNPJ do cliente
-              <input id="contract-document" class="input" type="text" inputmode="numeric" maxlength="18" placeholder="Obrigatório se não estiver no cadastro" required>
-            </label>
-            <label class="contract-field">E-mail financeiro
-              <input id="contract-email" class="input" type="email" placeholder="cliente@empresa.com">
-            </label>
-            <label class="contract-field">Telefone
-              <input id="contract-phone" class="input" type="tel" inputmode="tel" placeholder="5586999999999">
+            <label class="contract-field">Meses do contrato
+              <input id="contract-installments-fallback" class="input" type="number" min="1" max="120" step="1" value="12" required>
+              <small class="field-help">Só é usado se o Asaas não informar limite de cobranças.</small>
             </label>
             <label class="contract-field">Dias de tolerância
               <input id="contract-tolerance" class="input" type="number" min="0" max="30" step="1" value="3" required>
             </label>
-            <div class="contract-form-actions contract-span-4">
-              <p class="contract-form-note">O acesso só será liberado conforme as regras financeiras do contrato e confirmação de pagamento.</p>
-              <button id="contract-create-btn" class="btn btn-primary" type="submit">Criar contrato no Asaas</button>
+            <div class="contract-form-actions contract-span-2">
+              <p class="contract-form-note">A importação não cria cobrança. Ela apenas vincula uma assinatura já existente no Asaas ao controle de acesso da AV.</p>
+              <button id="contract-import-btn" class="btn btn-primary" type="submit" disabled>Importar e vincular</button>
             </div>
           </form>
         </div>
@@ -437,6 +452,6 @@
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/creditos.js?v=20261005-contratos"></script>
+  <script src="./js/creditos.js?v=20261005-asaas-primeiro"></script>
 </body>
 </html>

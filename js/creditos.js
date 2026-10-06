@@ -21,8 +21,9 @@
   let accessRows = [];
   let trialTarget = null;
   let selectedTrialDays = 7;
-  let contractData = {clientes:[], produtos:[], contratos:[], configuracao:{}};
+  let contractData = {clientes:[], produtos:[], contratos:[], configuracao:{}, assinaturasAsaas:[]};
   let contractCancelTarget = null;
+  let selectedAsaasSubscription = null;
 
   const fmt = new Intl.NumberFormat('pt-BR');
   const dateFmt = new Intl.DateTimeFormat('pt-BR', { dateStyle:'short', timeStyle:'short' });
@@ -279,6 +280,7 @@
     renderContractProducts();
     renderContractSelectors();
     renderContractsTable();
+    renderAsaasSubscriptions();
   }
 
   async function loadContracts({silent=false}={}) {
@@ -289,7 +291,8 @@
         clientes:Array.isArray(data.clientes) ? data.clientes : [],
         produtos:Array.isArray(data.produtos) ? data.produtos : [],
         contratos:Array.isArray(data.contratos) ? data.contratos : [],
-        configuracao:data.configuracao || {}
+        configuracao:data.configuracao || {},
+        assinaturasAsaas:Array.isArray(contractData.assinaturasAsaas) ? contractData.assinaturasAsaas : []
       };
       renderContracts();
       return true;
@@ -301,52 +304,122 @@
     }
   }
 
-  function syncContractCompanyFields() {
-    const id = $('#contract-company')?.value || '';
-    const row = (contractData.clientes || []).find(c => String(c.empresa_id) === String(id));
-    if (!row) return;
-    $('#contract-document').value = String(row.documento || '');
-    $('#contract-email').value = String(row.email || '');
-    $('#contract-phone').value = String(row.telefone || '');
+  function asaasStatusClass(status) {
+    const s = String(status || '').toUpperCase();
+    if (s === 'ACTIVE') return 'on';
+    if (s === 'EXPIRED') return 'neutral';
+    return 'off';
   }
 
-  async function createContract(event) {
+  function asaasStatusLabel(status) {
+    const s = String(status || '').toUpperCase();
+    return ({ACTIVE:'Ativa',EXPIRED:'Expirada',INACTIVE:'Inativa'})[s] || s || '—';
+  }
+
+  function paymentTypeLabel(type) {
+    const s = String(type || '').toUpperCase();
+    return ({PIX:'PIX',BOLETO:'Boleto',CREDIT_CARD:'Cartão',UNDEFINED:'A definir',DEBIT_CARD:'Débito',TRANSFER:'Transferência',DEPOSIT:'Depósito'})[s] || s || '—';
+  }
+
+  function isAsaasSubscriptionLinked(id) {
+    return (contractData.contratos || []).some(r => String(r.asaas_subscription_id || '') === String(id || ''));
+  }
+
+  function asaasSubscriptionRow(s) {
+    const linked = isAsaasSubscriptionLinked(s.id);
+    const active = String(s.status_asaas || '').toUpperCase() === 'ACTIVE';
+    const compatible = ['PIX','BOLETO','CREDIT_CARD','UNDEFINED'].includes(String(s.forma_pagamento || '').toUpperCase()) && String(s.ciclo || '').toUpperCase() === 'MONTHLY';
+    const disabled = linked || !active || !compatible;
+    const actionLabel = linked ? 'Já vinculado' : (!active ? 'Indisponível' : (!compatible ? 'Não compatível' : 'Vincular'));
+    return `<tr>
+      <td><strong>${escapeHtml(s.cliente_nome || s.customer_id || '—')}</strong><small class="table-sub">${escapeHtml(s.cpf_cnpj || s.email || s.customer_id || '')}</small></td>
+      <td><strong>${escapeHtml(s.descricao || 'Assinatura')}</strong><small class="table-sub">${escapeHtml(s.id || '')}</small></td>
+      <td>${moneyBRL(s.valor)}</td>
+      <td>${escapeHtml(paymentTypeLabel(s.forma_pagamento))}<small class="table-sub">${escapeHtml(s.ciclo || '—')}</small></td>
+      <td>${dateOnly(s.proximo_vencimento)}</td>
+      <td><span class="badge ${asaasStatusClass(s.status_asaas)}">${escapeHtml(asaasStatusLabel(s.status_asaas))}</span></td>
+      <td><span class="badge ${linked ? 'on' : 'neutral'}">${linked ? 'Vinculado' : 'Pendente'}</span></td>
+      <td><button class="btn ${disabled ? 'btn-secondary' : 'btn-primary'} btn-small" type="button" data-asaas-action="select" data-asaas-id="${escapeHtml(s.id)}" ${disabled ? 'disabled' : ''}>${actionLabel}</button></td>
+    </tr>`;
+  }
+
+  function renderAsaasSubscriptions() {
+    const body = $('#asaas-subscriptions-body');
+    if (!body) return;
+    const q = String($('#asaas-subscription-search')?.value || '').trim().toLowerCase();
+    const rows = (contractData.assinaturasAsaas || []).filter(s => !q || [s.cliente_nome,s.cpf_cnpj,s.email,s.descricao,s.id,s.status_asaas,s.forma_pagamento].some(v => String(v || '').toLowerCase().includes(q)));
+    body.innerHTML = rows.length ? rows.map(asaasSubscriptionRow).join('') : '<tr><td colspan="8" class="empty">Nenhuma assinatura encontrada no Asaas.</td></tr>';
+  }
+
+  async function loadAsaasSubscriptions({silent=false}={}) {
+    const body = $('#asaas-subscriptions-body');
+    if (body && !silent) body.innerHTML = '<tr><td colspan="8" class="empty">Consultando Asaas...</td></tr>';
+    try {
+      const data = await contractsApi('asaas');
+      contractData.assinaturasAsaas = Array.isArray(data.assinaturas) ? data.assinaturas : [];
+      renderAsaasSubscriptions();
+      return true;
+    } catch (error) {
+      if (body) body.innerHTML = `<tr><td colspan="8" class="empty">${escapeHtml(error.message || 'Não foi possível consultar o Asaas.')}</td></tr>`;
+      if (!silent) toast(error.message || 'Não foi possível consultar o Asaas.', true);
+      console.warn('Asaas:', error);
+      return false;
+    }
+  }
+
+  function clearAsaasSelection() {
+    selectedAsaasSubscription = null;
+    if ($('#contract-asaas-id')) $('#contract-asaas-id').value = '';
+    if ($('#contract-import-btn')) $('#contract-import-btn').disabled = true;
+    const summary = $('#asaas-selected-summary');
+    if (summary) summary.innerHTML = '<span>Nenhuma assinatura selecionada.</span><strong>Escolha “Vincular” em uma assinatura acima.</strong>';
+  }
+
+  function selectAsaasSubscription(id) {
+    const row = (contractData.assinaturasAsaas || []).find(s => String(s.id) === String(id));
+    if (!row) { toast('Assinatura do Asaas não encontrada.', true); return; }
+    if (isAsaasSubscriptionLinked(row.id)) { toast('Essa assinatura já está vinculada a um contrato.', true); return; }
+    selectedAsaasSubscription = row;
+    $('#contract-asaas-id').value = row.id;
+    $('#contract-import-btn').disabled = false;
+    if (Number(row.quantidade_parcelas || 0) > 0) $('#contract-installments-fallback').value = String(row.quantidade_parcelas);
+    const summary = $('#asaas-selected-summary');
+    summary.innerHTML = `
+      <div><span>Cliente no Asaas</span><strong>${escapeHtml(row.cliente_nome || row.customer_id || '—')}</strong><small>${escapeHtml(row.id)}</small></div>
+      <div><span>Valor</span><strong>${moneyBRL(row.valor)}</strong><small>${escapeHtml(paymentTypeLabel(row.forma_pagamento))}</small></div>
+      <div><span>Próximo vencimento</span><strong>${dateOnly(row.proximo_vencimento)}</strong><small>${escapeHtml(asaasStatusLabel(row.status_asaas))}</small></div>`;
+    $('#asaas-selected-summary').scrollIntoView({behavior:'smooth',block:'center'});
+  }
+
+  async function importAsaasContract(event) {
     event.preventDefault();
-    const button = $('#contract-create-btn');
+    const button = $('#contract-import-btn');
     const payload = {
       empresa_id:$('#contract-company').value,
       produto_codigo:$('#contract-product').value,
-      valor_parcela:Number($('#contract-value').value || 0),
-      quantidade_parcelas:Number($('#contract-installments').value || 0),
-      forma_pagamento:$('#contract-payment').value,
-      primeiro_vencimento:$('#contract-first-due').value,
-      cpf_cnpj:$('#contract-document').value,
-      email:$('#contract-email').value,
-      telefone:$('#contract-phone').value,
+      asaas_subscription_id:$('#contract-asaas-id').value,
+      quantidade_parcelas_fallback:Number($('#contract-installments-fallback').value || 12),
       dias_tolerancia:Number($('#contract-tolerance').value || 3)
     };
-    if (!payload.empresa_id || !payload.produto_codigo || !payload.primeiro_vencimento || !payload.cpf_cnpj || payload.valor_parcela <= 0 || payload.quantidade_parcelas < 1) {
-      toast('Preencha cliente, produto, CPF/CNPJ, valor, parcelas e vencimento.', true);
-      return;
-    }
+    if (!payload.asaas_subscription_id) { toast('Primeiro selecione uma assinatura do Asaas.', true); return; }
+    if (!payload.empresa_id || !payload.produto_codigo) { toast('Selecione a empresa e o produto que essa assinatura deve liberar.', true); return; }
     button.disabled = true;
     const previous = button.textContent;
-    button.textContent = 'Criando...';
+    button.textContent = 'Importando...';
     try {
-      const result = await contractsApi('criar',{method:'POST',body:payload});
-      toast(result?.mensagem || 'Contrato criado com sucesso.');
+      const result = await contractsApi('importar',{method:'POST',body:payload});
+      toast(result?.mensagem || 'Assinatura importada com sucesso.');
       $('#contract-form').reset();
-      $('#contract-installments').value = '12';
-      $('#contract-payment').value = 'PIX';
+      $('#contract-installments-fallback').value = '12';
       $('#contract-tolerance').value = '3';
-      const due = addDaysIso(1);
-      $('#contract-first-due').value = due;
-      $('#contract-first-due').min = addDaysIso(0);
+      clearAsaasSelection();
       await loadContracts({silent:true});
+      await loadAsaasSubscriptions({silent:true});
     } catch (error) {
-      toast(error.message || 'Não foi possível criar o contrato.', true);
-    } finally {
+      toast(error.message || 'Não foi possível importar a assinatura.', true);
       button.disabled = false;
+    } finally {
+      if (selectedAsaasSubscription) button.disabled = false;
       button.textContent = previous;
     }
   }
@@ -888,7 +961,7 @@
       button.textContent = 'Atualizando...';
       try {
         crmCache.clear();
-        const results = await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true}),loadContracts({silent:true})]);
+        const results = await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true}),loadContracts({silent:true}),loadAsaasSubscriptions({silent:true})]);
         const coreError = results[0].status === 'rejected' ? results[0].reason : null;
         if (coreError) throw coreError;
         const current = $('#ia-company-select').value;
@@ -920,8 +993,12 @@
       button.textContent = previous;
     });
     $('#contract-search').addEventListener('input',renderContractsTable);
-    $('#contract-company').addEventListener('change',syncContractCompanyFields);
-    $('#contract-form').addEventListener('submit',createContract);
+    $('#asaas-subscription-search').addEventListener('input',renderAsaasSubscriptions);
+    $('#asaas-refresh-btn').addEventListener('click',async e=>{
+      const button=e.currentTarget; const previous=button.textContent; button.disabled=true; button.textContent='Consultando...';
+      await loadAsaasSubscriptions(); button.disabled=false; button.textContent=previous;
+    });
+    $('#contract-form').addEventListener('submit',importAsaasContract);
     $('#contract-cancel-close').addEventListener('click',closeContractCancel);
     $('#contract-cancel-back').addEventListener('click',closeContractCancel);
     $('#contract-cancel-confirm').addEventListener('click',confirmContractCancel);
@@ -945,6 +1022,11 @@
         if(b.dataset.action==='trial') openTrialDialog(b.dataset.id);
         if(b.dataset.action==='trial-end') endTrialById(b.dataset.id);
         if(b.dataset.action==='delete-company') openDeleteCompany(b.dataset.id);
+        return;
+      }
+      const asaasAction=e.target.closest('[data-asaas-action]');
+      if(asaasAction){
+        if(asaasAction.dataset.asaasAction==='select') selectAsaasSubscription(asaasAction.dataset.asaasId);
         return;
       }
       const contractAction=e.target.closest('[data-contract-action]');
@@ -993,7 +1075,10 @@
       showSection(section);
       history.replaceState(null,'','#'+section);
       if(section==='ia-empresa' && $('#ia-company-select').value) openIaCompany($('#ia-company-select').value);
-      if(section==='contratos' && !(contractData.contratos || []).length) loadContracts();
+      if(section==='contratos'){
+        if (!(contractData.contratos || []).length) loadContracts();
+        if (!(contractData.assinaturasAsaas || []).length) loadAsaasSubscriptions();
+      }
     }));
     $('#logout-btn').addEventListener('click',async()=>{ await supabase.auth.signOut(); session=null; crmCache.clear(); showAuth(true); toast('Sessão encerrada.'); });
     $('#menu-btn').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
@@ -1020,7 +1105,7 @@
   }
 
   async function bootData() {
-    const results = await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true}),loadContracts({silent:true})]);
+    const results = await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true}),loadContracts({silent:true}),loadAsaasSubscriptions({silent:true})]);
     if (results[0].status === 'rejected') throw results[0].reason;
 
     const initial=location.hash.replace('#','');
@@ -1046,7 +1131,6 @@
 
   async function init() {
     bindEvents();
-    if ($('#contract-first-due')) { $('#contract-first-due').min = addDaysIso(0); $('#contract-first-due').value = addDaysIso(1); }
     window.addEventListener('focus', syncCompaniesSilently);
     setInterval(syncCompaniesSilently, 60000);
     try { if(await getSession()) await bootData(); }

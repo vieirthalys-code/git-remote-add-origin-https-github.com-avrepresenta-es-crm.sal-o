@@ -929,3 +929,30 @@ code { padding:2px 6px; border-radius:6px; background:#f2f2f2; font-family:ui-mo
 @media (max-width: 440px) {
   .contract-stats { grid-template-columns:1fr; }
 }
+
+
+/* ---------- Asaas primeiro ---------- */
+.contract-head-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.contract-head-actions .search { min-width:260px; }
+.asaas-subscription-table td:first-child, .asaas-subscription-table td:nth-child(2) { min-width:190px; }
+.asaas-selected-summary {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin:18px 22px 0;
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  background:#fffaf5;
+}
+.asaas-selected-summary > div { min-width:0; padding:4px 6px; }
+.asaas-selected-summary span { display:block; color:var(--muted); font-size:.76rem; margin-bottom:4px; }
+.asaas-selected-summary strong { display:block; overflow-wrap:anywhere; }
+.asaas-selected-summary small { display:block; color:var(--muted); margin-top:4px; overflow-wrap:anywhere; }
+.field-help { display:block; margin-top:6px; color:var(--muted); font-size:.72rem; font-weight:400; line-height:1.35; }
+@media (max-width: 900px) { .asaas-selected-summary { grid-template-columns:1fr; } }
+@media (max-width: 700px) {
+  .contract-head-actions { width:100%; align-items:stretch; flex-direction:column; }
+  .contract-head-actions .search, .contract-head-actions .btn { width:100%; min-width:0; max-width:none; }
+  .asaas-selected-summary { margin:14px 16px 0; }
+}
