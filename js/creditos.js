@@ -18,6 +18,7 @@
   let currentCrmModule = 'resumo';
   let toastTimer = null;
   let deleteCompanyTarget = null;
+  let deleteSaasCompanyTarget = null;
   let accessRows = [];
   let trialTarget = null;
   let selectedTrialDays = 7;
@@ -578,6 +579,9 @@
         <div class="access-company-actions">
           <button class="btn btn-primary btn-small" type="button" data-action="trial" data-id="${escapeHtml(row.empresa_id)}">${row.teste_ativo?'Alterar teste':'Liberar teste grátis'}</button>
           ${row.teste_ativo || row.teste_gratis_ate ? `<button class="btn btn-secondary btn-small" type="button" data-action="trial-end" data-id="${escapeHtml(row.empresa_id)}">Encerrar teste</button>` : ''}
+          ${isProtectedSaasCompany(row)
+            ? '<button class="btn btn-secondary btn-small btn-protected" type="button" disabled title="Empresa protegida">Protegida</button>'
+            : `<button class="btn btn-danger btn-small" type="button" data-action="delete-saas-company" data-id="${escapeHtml(row.empresa_id)}">Excluir</button>`}
         </div>
       </article>`).join('');
     renderStats();
@@ -881,6 +885,69 @@
     }
   }
 
+  function isProtectedSaasCompany(company) {
+    if (!company) return false;
+    const name = String(company.nome_fantasia || company.empresa_nome || '').trim().toLowerCase();
+    const email = String(company.usuario_email || '').trim().toLowerCase();
+    return email === ALLOWED_ADMIN_EMAIL || name.startsWith('av representações') || name.startsWith('av representacoes');
+  }
+
+  function openDeleteSaasCompany(companyId) {
+    const company = accessRows.find(row => String(row.empresa_id) === String(companyId));
+    if (!company) { toast('Empresa SaaS não encontrada.', true); return; }
+    if (isProtectedSaasCompany(company)) { toast('A AV Representações está protegida contra exclusão.', true); return; }
+    deleteSaasCompanyTarget = company;
+    $('#delete-saas-company-name').textContent = company.nome_fantasia || company.empresa_nome || '—';
+    $('#delete-saas-company-email').textContent = company.usuario_email || 'Sem e-mail vinculado';
+    $('#delete-saas-company-id').textContent = `empresa_id ${company.empresa_id}`;
+    $('#delete-saas-company-confirmation').value = '';
+    $('#delete-saas-company-submit').disabled = true;
+    $('#delete-saas-company-dialog').showModal();
+    setTimeout(() => $('#delete-saas-company-confirmation').focus(), 100);
+  }
+
+  function closeDeleteSaasCompany() {
+    if ($('#delete-saas-company-dialog')?.open) $('#delete-saas-company-dialog').close();
+    deleteSaasCompanyTarget = null;
+    if ($('#delete-saas-company-confirmation')) $('#delete-saas-company-confirmation').value = '';
+    if ($('#delete-saas-company-submit')) $('#delete-saas-company-submit').disabled = true;
+  }
+
+  async function deleteSaasCompany(event) {
+    event.preventDefault();
+    const company = deleteSaasCompanyTarget;
+    if (!company || isProtectedSaasCompany(company)) { toast('Empresa protegida ou inválida.', true); return; }
+    const expected = String(company.nome_fantasia || company.empresa_nome || '').trim();
+    const typed = $('#delete-saas-company-confirmation').value.trim();
+    if (typed !== expected) { toast('Digite exatamente o nome da empresa para confirmar.', true); return; }
+    const button = $('#delete-saas-company-submit');
+    const previous = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Excluindo...';
+    try {
+      const result = await api('empresa-saas/excluir', {
+        empresa_id: String(company.empresa_id || '').trim(),
+        confirmacao: typed
+      });
+      if (result?.ok === false) throw new Error(result?.mensagem || result?.erro || 'Não foi possível excluir a empresa.');
+      closeDeleteSaasCompany();
+      crmCache.clear();
+      await Promise.allSettled([
+        loadTrialAccess({silent:true}),
+        loadEmpresas(),
+        loadPrompts(),
+        loadContracts({silent:true}),
+        loadAsaasSubscriptions({silent:true})
+      ]);
+      toast(result?.mensagem || `${expected} excluída permanentemente.`);
+    } catch(error) {
+      toast(error.message || 'Falha ao excluir empresa SaaS.', true);
+    } finally {
+      button.textContent = previous;
+      button.disabled = false;
+    }
+  }
+
   function isProtectedCompany(company) {
     if (!company) return false;
     return Number(company.empresa_id) === 5 || String(company.empresa_nome || '').trim().toLowerCase().startsWith('av representações');
@@ -1022,6 +1089,7 @@
         if(b.dataset.action==='trial') openTrialDialog(b.dataset.id);
         if(b.dataset.action==='trial-end') endTrialById(b.dataset.id);
         if(b.dataset.action==='delete-company') openDeleteCompany(b.dataset.id);
+        if(b.dataset.action==='delete-saas-company') openDeleteSaasCompany(b.dataset.id);
         return;
       }
       const asaasAction=e.target.closest('[data-asaas-action]');
@@ -1068,6 +1136,13 @@
     $('#delete-company-confirmation').addEventListener('input', e => {
       const expected = String(deleteCompanyTarget?.empresa_nome || '').trim();
       $('#delete-company-submit').disabled = e.target.value.trim() !== expected;
+    });
+    $('#delete-saas-company-close').addEventListener('click', closeDeleteSaasCompany);
+    $('#delete-saas-company-cancel').addEventListener('click', closeDeleteSaasCompany);
+    $('#delete-saas-company-form').addEventListener('submit', deleteSaasCompany);
+    $('#delete-saas-company-confirmation').addEventListener('input', e => {
+      const expected = String(deleteSaasCompanyTarget?.nome_fantasia || deleteSaasCompanyTarget?.empresa_nome || '').trim();
+      $('#delete-saas-company-submit').disabled = e.target.value.trim() !== expected;
     });
     $$('.nav-link').forEach(link=>link.addEventListener('click',e=>{
       e.preventDefault();
