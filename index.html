@@ -422,6 +422,36 @@
     </form>
   </dialog>
 
+  <dialog id="delete-saas-company-dialog" class="dialog delete-company-dialog">
+    <div class="dialog-head">
+      <div>
+        <p class="eyebrow">EXCLUSÃO PERMANENTE</p>
+        <h2>Excluir empresa SaaS</h2>
+      </div>
+      <button type="button" class="icon-btn" id="delete-saas-company-close">×</button>
+    </div>
+    <div class="delete-warning">
+      <strong>Esta ação é permanente.</strong>
+      <p>Serão removidos o cadastro central da empresa, o usuário/e-mail vinculado no Supabase Auth e os registros da empresa identificados pelo mesmo empresa_id no banco.</p>
+      <p>A AV Representações permanece protegida e não pode ser excluída por este botão. Workflows compartilhados do n8n não são apagados.</p>
+    </div>
+    <div class="delete-company-target">
+      <span>Empresa selecionada</span>
+      <strong id="delete-saas-company-name">—</strong>
+      <small id="delete-saas-company-email">—</small>
+      <small id="delete-saas-company-id">—</small>
+    </div>
+    <form id="delete-saas-company-form">
+      <label>Para confirmar, digite exatamente o nome da empresa:
+        <input id="delete-saas-company-confirmation" class="input" type="text" autocomplete="off" required>
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-secondary" id="delete-saas-company-cancel">Cancelar</button>
+        <button type="submit" class="btn btn-danger" id="delete-saas-company-submit" disabled>Excluir permanentemente</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="delete-company-dialog" class="dialog delete-company-dialog">
     <div class="dialog-head">
       <div>
@@ -452,6 +482,6 @@
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/creditos.js?v=20261005-asaas-primeiro"></script>
+  <script src="./js/creditos.js?v=20261007-excluir-saas"></script>
 </body>
 </html>
