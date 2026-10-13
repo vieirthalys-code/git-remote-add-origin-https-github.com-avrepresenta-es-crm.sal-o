@@ -14,6 +14,9 @@
   let session = null;
   let empresas = [];
   let promptRows = [];
+  let agendaPromptRows = [];
+  let agendaPromptLoaded = false;
+  let agendaPromptPending = false;
   let crmCache = new Map();
   let currentCrmModule = 'resumo';
   let toastTimer = null;
@@ -818,6 +821,113 @@
   }
 
 
+
+  // Os IDs das empresas do CRM Agenda são VARCHAR(100), não números.
+  function selectedAgendaCompany() {
+    return agendaPromptRows.find(row => row.empresa_id === ($('#agenda-company-select')?.value || '')) || null;
+  }
+
+  function renderAgendaPromptCompany() {
+    const company = selectedAgendaCompany();
+    const editor = $('#agenda-prompt-text');
+    const button = $('#agenda-prompt-save-btn');
+    const status = $('#agenda-prompts-status');
+    if (!company) {
+      editor.value = '';
+      editor.disabled = true;
+      button.disabled = true;
+      $('#agenda-prompt-company-meta').textContent = 'Nenhuma empresa selecionada.';
+      $('#agenda-prompt-last-update').textContent = '—';
+      $('#agenda-prompt-count').textContent = '0 / 12.000 caracteres';
+      return;
+    }
+    editor.value = company.prompt_sistema;
+    editor.disabled = false;
+    button.disabled = false;
+    $('#agenda-prompt-company-meta').textContent = `${company.empresa_nome} · empresa_id ${company.empresa_id}`;
+    $('#agenda-prompt-last-update').textContent = company.updated_at ? `Última alteração: ${date(company.updated_at)}` : 'Nenhum prompt personalizado salvo.';
+    $('#agenda-prompt-count').textContent = `${fmt.format(editor.value.length)} / 12.000 caracteres`;
+    if (status) status.textContent = `Empresa selecionada: ${company.empresa_nome}. ${company.prompt_sistema.trim() ? 'Prompt configurado.' : 'Prompt ainda não configurado.'}`;
+  }
+
+  async function loadAgendaPrompts() {
+    if (agendaPromptPending) return;
+    agendaPromptPending = true;
+    const select = $('#agenda-company-select');
+    const button = $('#agenda-prompts-refresh-btn');
+    const status = $('#agenda-prompts-status');
+    const lastSelection = select.value;
+    select.disabled = true;
+    $('#agenda-prompt-text').disabled = true;
+    $('#agenda-prompt-save-btn').disabled = true;
+    button.disabled = true;
+    status.textContent = 'Consultando empresas e prompts do CRM de Agenda...';
+    try {
+      const data = await api('agenda-prompts/listar', {});
+      if (!Array.isArray(data?.empresas)) throw new Error('Resposta do backend sem a lista de empresas.');
+      const rows = data.empresas.map(row => ({
+        empresa_id: String(row.empresa_id ?? '').trim(),
+        empresa_nome: String(row.empresa_nome ?? row.nome ?? ''),
+        empresa_status: String(row.empresa_status ?? row.status ?? ''),
+        prompt_sistema: String(row.prompt_sistema ?? ''),
+        updated_at: row.updated_at || null
+      })).filter(row => row.empresa_id);
+      agendaPromptRows = rows;
+      agendaPromptLoaded = true;
+      select.innerHTML = rows.length
+        ? rows.map(row => `<option value="${escapeHtml(row.empresa_id)}">${escapeHtml(row.empresa_nome || 'Empresa')} · ${escapeHtml(row.empresa_id)}</option>`).join('')
+        : '<option value="">Nenhuma empresa cadastrada no CRM de Agenda</option>';
+      if (rows.some(row => row.empresa_id === lastSelection)) select.value = lastSelection;
+      select.disabled = !rows.length;
+      renderAgendaPromptCompany();
+      if (!rows.length) status.textContent = 'Nenhuma empresa encontrada no cadastro do CRM de Agenda.';
+    } catch (error) {
+      agendaPromptLoaded = false;
+      agendaPromptRows = [];
+      select.innerHTML = '<option value="">Integração não disponível</option>';
+      select.disabled = true;
+      $('#agenda-prompt-text').value = '';
+      $('#agenda-prompt-text').disabled = true;
+      $('#agenda-prompt-save-btn').disabled = true;
+      $('#agenda-prompt-company-meta').textContent = 'Não foi possível carregar as empresas.';
+      $('#agenda-prompt-last-update').textContent = '—';
+      $('#agenda-prompt-count').textContent = '0 / 12.000 caracteres';
+      status.textContent = `Falha ao consultar o n8n: ${error.message}. Confira o workflow ADM AV — PROMPTS CRM AGENDA e o SQL de instalação.`;
+      toast(error.message || 'Falha ao carregar prompts de agendamento.', true);
+    } finally {
+      agendaPromptPending = false;
+      button.disabled = false;
+    }
+  }
+
+  async function saveAgendaPrompt(event) {
+    event.preventDefault();
+    const company = selectedAgendaCompany();
+    if (!agendaPromptLoaded || !company) { toast('Selecione uma empresa válida do CRM de Agenda.',true); return; }
+    const editor = $('#agenda-prompt-text');
+    const prompt = editor.value.trim();
+    if (prompt.length > 12000) { toast('O prompt ultrapassa 12.000 caracteres.',true); return; }
+    const saveButton = $('#agenda-prompt-save-btn');
+    const selector = $('#agenda-company-select');
+    saveButton.disabled = true;
+    selector.disabled = true;
+    saveButton.textContent = 'Salvando...';
+    try {
+      const data = await api('agenda-prompts/salvar', {empresa_id:company.empresa_id,prompt_sistema:prompt});
+      company.prompt_sistema = String(data.prompt_sistema ?? prompt);
+      company.updated_at = data.updated_at || new Date().toISOString();
+      editor.value = company.prompt_sistema;
+      renderAgendaPromptCompany();
+      toast(`Prompt do CRM de Agenda salvo para ${company.empresa_nome}.`);
+    } catch (error) {
+      toast(error.message || 'Não foi possível salvar o prompt.',true);
+    } finally {
+      selector.disabled = false;
+      saveButton.disabled = false;
+      saveButton.textContent = 'Salvar prompt da empresa';
+    }
+  }
+
   function findAccessCompany(companyId) {
     return accessRows.find(row => String(row.empresa_id) === String(companyId));
   }
@@ -1014,7 +1124,7 @@
   function showSection(name) {
     $$('.section').forEach(s=>s.classList.toggle('active',s.id===name));
     $$('.nav-link').forEach(l=>l.classList.toggle('active',l.dataset.section===name));
-    const titles = {'visao-geral':'Visão geral','empresas':'Empresas','contratos':'Contratos & Planos','crm-juridico':'CRM Jurídico','ia-empresa':'IA por Empresa'};
+    const titles = {'visao-geral':'Visão geral','empresas':'Empresas','contratos':'Contratos & Planos','crm-juridico':'CRM Jurídico','ia-empresa':'IA por Empresa','prompts-agenda':'Prompts CRM de Agenda'};
     $('#page-title').textContent = titles[name] || 'Admin SaaS';
     if (window.innerWidth<900) $('#sidebar').classList.remove('open');
   }
@@ -1033,6 +1143,7 @@
         if (coreError) throw coreError;
         const current = $('#ia-company-select').value;
         if ($('#ia-empresa').classList.contains('active') && current) await openIaCompany(current);
+        if ($('#prompts-agenda').classList.contains('active')) await loadAgendaPrompts();
         if ($('#visao-geral').classList.contains('active') && $('#overview-company-select').value) {
           await openOverviewCompany($('#overview-company-select').value);
         }
@@ -1073,6 +1184,12 @@
     $('#overview-company-select').addEventListener('change',e=>openOverviewCompany(e.target.value));
     $('#ia-company-select').addEventListener('change',e=>openIaCompany(e.target.value));
     $('#prompt-form').addEventListener('submit',savePrompt);
+    $('#agenda-prompts-refresh-btn').addEventListener('click',loadAgendaPrompts);
+    $('#agenda-company-select').addEventListener('change',renderAgendaPromptCompany);
+    $('#agenda-prompt-text').addEventListener('input',event=>{
+      $('#agenda-prompt-count').textContent = `${fmt.format(event.target.value.length)} / 12.000 caracteres`;
+    });
+    $('#agenda-prompt-form').addEventListener('submit',saveAgendaPrompt);
     $('#crm-module-tabs').addEventListener('click',e=>{
       const b=e.target.closest('.module-tab');
       if(b) openCrm($('#crm-company-select').value,b.dataset.module);
@@ -1150,6 +1267,7 @@
       showSection(section);
       history.replaceState(null,'','#'+section);
       if(section==='ia-empresa' && $('#ia-company-select').value) openIaCompany($('#ia-company-select').value);
+      if(section==='prompts-agenda') loadAgendaPrompts();
       if(section==='contratos'){
         if (!(contractData.contratos || []).length) loadContracts();
         if (!(contractData.assinaturasAsaas || []).length) loadAsaasSubscriptions();
@@ -1185,6 +1303,7 @@
 
     const initial=location.hash.replace('#','');
     if(initial && $('#'+initial)) showSection(initial);
+    if(initial === 'prompts-agenda') await loadAgendaPrompts();
 
     if(empresas.length){
       const firstId = empresas[0].empresa_id;

@@ -7,6 +7,7 @@
   <title>Admin SaaS | AV Representações & Tecnologia</title>
   <link rel="icon" type="image/png" href="./assets/av-logo.png?v=20261005-contratos">
   <link rel="stylesheet" href="./css/creditos.css?v=20261005-asaas-primeiro">
+  <link rel="stylesheet" href="./css/agenda-prompts.css?v=20261013-agenda-admin">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -46,6 +47,7 @@
         <a class="nav-link" href="#contratos" data-section="contratos">Contratos & Planos</a>
         <a class="nav-link" href="#crm-juridico" data-section="crm-juridico">CRM Jurídico</a>
         <a class="nav-link" href="#ia-empresa" data-section="ia-empresa">IA por Empresa</a>
+        <a class="nav-link" href="#prompts-agenda" data-section="prompts-agenda">Prompts CRM de Agenda</a>
       </nav>
 
       <div class="sidebar-footer">
@@ -347,6 +349,40 @@
           <p>Este painel não cria saldo, crédito, token ou orçamento interno. Os botões de pagamento levam ao faturamento oficial dos provedores.</p>
         </div>
       </section>
+
+      <!-- Gestão de prompts para o CRM de Agendamento; independente do CRM Jurídico. -->
+      <section id="prompts-agenda" class="section">
+        <div class="panel">
+          <div class="panel-head agenda-prompt-head">
+            <div>
+              <p class="eyebrow">AGENTE DE IA · CRM DE AGENDAMENTO</p>
+              <h2>Prompts por empresa</h2>
+              <p>Edite as orientações do agente de WhatsApp da empresa selecionada. Dados separados por <code>empresa_id</code> e salvos no PostgreSQL.</p>
+            </div>
+            <button id="agenda-prompts-refresh-btn" type="button" class="btn btn-secondary">Atualizar empresas</button>
+          </div>
+          <div id="agenda-prompts-status" class="agenda-prompt-status" role="status" aria-live="polite">Clique nesta seção para carregar as empresas cadastradas no CRM de Agenda.</div>
+          <form id="agenda-prompt-form" class="agenda-prompt-form">
+            <label class="agenda-prompt-field" for="agenda-company-select">Empresa do CRM de Agenda
+              <select id="agenda-company-select" class="input" required disabled>
+                <option value="">Carregando empresas...</option>
+              </select>
+            </label>
+            <div class="agenda-prompt-information">
+              <span id="agenda-prompt-company-meta">Selecione uma empresa cadastrada.</span>
+              <span id="agenda-prompt-last-update">Ainda não atualizado.</span>
+            </div>
+            <label class="agenda-prompt-field" for="agenda-prompt-text">Prompt personalizado do agente
+              <textarea id="agenda-prompt-text" class="input prompt-editor" rows="12" maxlength="12000" placeholder="Defina instruções de atendimento para esta empresa, sem substituir as regras de segurança, consulta de serviços ou confirmação de horários." disabled></textarea>
+            </label>
+            <div class="agenda-prompt-actions">
+              <span id="agenda-prompt-count" class="agenda-prompt-count">0 / 12.000 caracteres</span>
+              <button id="agenda-prompt-save-btn" type="submit" class="btn btn-primary" disabled>Salvar prompt da empresa</button>
+            </div>
+          </form>
+          <p class="prompt-help">O texto complementa o prompt original do agente de agendamento. As regras fixas de autenticação, isolamento das empresas, serviços e horários permanecem no workflow.</p>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -482,6 +518,6 @@
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/creditos.js?v=20261007-excluir-saas"></script>
+  <script src="./js/creditos.js?v=20261013-agenda-admin"></script>
 </body>
 </html>
