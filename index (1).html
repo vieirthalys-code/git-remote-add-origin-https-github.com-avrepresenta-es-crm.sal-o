@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f97316">
+  <title>Admin SaaS | AV Representações & Tecnologia</title>
+  <link rel="stylesheet" href="./css/creditos.css">
+</head>
+<body>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <section id="auth-screen" class="auth-screen">
+    <div class="auth-card">
+      <div class="brand auth-brand">
+        <div class="brand-mark">AV</div>
+        <div>
+          <strong>Admin SaaS</strong>
+          <span>Controle do CRM Jurídico e IA</span>
+        </div>
+      </div>
+      <p class="eyebrow">ACESSO ADMINISTRATIVO</p>
+      <h1>Entrar no Admin SaaS</h1>
+      <p class="auth-description">Acesso administrativo exclusivo para a conta da AV Representações & Tecnologia.</p>
+      <form id="login-form">
+        <label>E-mail administrativo
+          <input id="login-email" class="input" type="email" value="avrep.tech@gmail.com" readonly>
+        </label>
+        <label>Senha
+          <input id="login-password" class="input" type="password" autocomplete="current-password" required>
+        </label>
+        <button id="login-submit" class="btn btn-primary btn-full" type="submit">Entrar</button>
+      </form>
+      <p class="auth-foot">Conta autorizada: <strong>avrep.tech@gmail.com</strong></p>
+    </div>
+  </section>
+
+  <div id="app" class="app hidden">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">AV</div>
+        <div>
+          <strong>Admin SaaS</strong>
+          <span>CRM Jurídico + IA</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-link active" href="#visao-geral" data-section="visao-geral">Visão geral</a>
+        <a class="nav-link" href="#empresas" data-section="empresas">Empresas</a>
+        <a class="nav-link" href="#crm-juridico" data-section="crm-juridico">CRM Jurídico</a>
+        <a class="nav-link" href="#creditos" data-section="creditos">Créditos de IA</a>
+        <a class="nav-link" href="#financeiro-api" data-section="financeiro-api">Financeiro das APIs</a>
+        <a class="nav-link" href="#historico" data-section="historico">Histórico</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span id="admin-email">Carregando...</span>
+        <button id="logout-btn" class="btn btn-ghost">Sair</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button id="menu-btn" class="icon-btn mobile-only" aria-label="Abrir menu">☰</button>
+        <div>
+          <p class="eyebrow">ADMINISTRAÇÃO</p>
+          <h1 id="page-title">Visão geral</h1>
+        </div>
+        <button id="refresh-btn" class="btn btn-secondary">Atualizar</button>
+      </header>
+
+      <section id="visao-geral" class="section active">
+        <div class="stats-grid">
+          <article class="stat-card"><span>Empresas</span><strong id="stat-empresas">0</strong></article>
+          <article class="stat-card"><span>Saldo IA disponível</span><strong id="stat-saldo">R$ 0,00</strong></article>
+          <article class="stat-card"><span>Consumo de IA</span><strong id="stat-consumidos">R$ 0,00</strong></article>
+          <article class="stat-card"><span>Agentes ativos</span><strong id="stat-agentes">0</strong></article>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Empresas do CRM Jurídico</h2><p>Visão administrativa por <code>empresa_id</code>.</p></div>
+            <button class="btn btn-primary" data-go="empresas">Gerenciar empresas</button>
+          </div>
+          <div id="overview-companies" class="overview-company-grid"></div>
+        </div>
+
+        <div class="panel crm-overview-panel">
+          <div class="panel-head">
+            <div><h2>Dados do CRM</h2><p>Selecione uma empresa para consultar clientes, processos, documentos, agenda, notificações, usuários e IA.</p></div>
+            <select id="overview-company-select" class="input compact-select"></select>
+          </div>
+          <div id="overview-company-details" class="detail-grid"></div>
+        </div>
+      </section>
+
+      <section id="empresas" class="section">
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Empresas</h2><p>Empresas cadastradas no CRM Jurídico e respectivos créditos de IA.</p></div>
+            <input id="empresa-search" class="input search" type="search" placeholder="Pesquisar empresa...">
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Empresa</th><th>ID</th><th>Status</th><th>Saldo IA (R$)</th><th>Consumido (R$)</th><th>Saldo ativo</th><th>Agente</th><th>Ações</th></tr></thead>
+              <tbody id="empresas-body"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="crm-juridico" class="section">
+        <div class="panel crm-selector">
+          <div>
+            <p class="eyebrow">DADOS DO TENANT</p>
+            <h2 id="crm-company-title">CRM Jurídico</h2>
+            <p id="crm-company-meta">Selecione uma empresa para consultar os dados.</p>
+          </div>
+          <select id="crm-company-select" class="input compact-select"></select>
+        </div>
+
+        <div id="crm-counts" class="mini-stats"></div>
+
+        <div class="module-tabs" id="crm-module-tabs">
+          <button class="module-tab active" data-module="resumo">Resumo</button>
+          <button class="module-tab" data-module="clientes">Clientes</button>
+          <button class="module-tab" data-module="processos">Processos</button>
+          <button class="module-tab" data-module="documentos">Documentos</button>
+          <button class="module-tab" data-module="agenda">Agenda / Prazos</button>
+          <button class="module-tab" data-module="notificacoes">Notificações</button>
+          <button class="module-tab" data-module="usuarios">Usuários</button>
+          <button class="module-tab" data-module="configuracoes">Configuração</button>
+          <button class="module-tab" data-module="ia">Agente IA</button>
+        </div>
+
+        <div id="crm-module-content"></div>
+      </section>
+
+      <section id="creditos" class="section">
+        <div class="stats-grid credits-money-stats">
+          <article class="stat-card"><span>Empresas</span><strong id="credit-stat-empresas">0</strong></article>
+          <article class="stat-card"><span>Saldo disponível</span><strong id="credit-stat-saldo-money">R$ 0,00</strong></article>
+          <article class="stat-card"><span>Total creditado</span><strong id="credit-stat-creditado">R$ 0,00</strong></article>
+          <article class="stat-card"><span>Total consumido</span><strong id="credit-stat-consumido-money">R$ 0,00</strong></article>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Créditos de IA por empresa</h2><p>Saldo em reais separado por <code>empresa_id</code> e provedor. Os valores de uma empresa não alteram o saldo das demais.</p></div>
+            <button class="btn btn-secondary" id="ia-refresh-btn" type="button">Atualizar créditos</button>
+          </div>
+          <div class="table-wrap">
+            <table class="money-credit-table">
+              <thead><tr><th>Empresa</th><th>ID</th><th>Provedor</th><th>Saldo</th><th>Creditado</th><th>Consumido</th><th>Prompt</th><th>Agente</th><th>Ações</th></tr></thead>
+              <tbody id="creditos-body"><tr><td colspan="9" class="empty">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="financeiro-api" class="section">
+        <div class="payment-hero">
+          <div>
+            <p class="eyebrow">FATURAMENTO REAL DOS PROVEDORES</p>
+            <h2>Financeiro das APIs</h2>
+            <p>Consulta a conta de faturamento da OpenAI e do Google Cloud pelo backend seguro. Nenhuma chave financeira é exposta no navegador.</p>
+          </div>
+          <button id="billing-refresh-btn" class="btn btn-primary" type="button">Atualizar saldos</button>
+        </div>
+
+        <div class="billing-summary-grid">
+          <article class="provider-finance-card" data-provider-card="openai">
+            <div class="provider-finance-head">
+              <div class="provider-logo">O</div>
+              <div>
+                <h3>OpenAI API</h3>
+                <p id="openai-account-label">Conta de faturamento</p>
+              </div>
+              <span id="openai-status" class="badge off">Aguardando</span>
+            </div>
+            <div class="provider-money-grid">
+              <div class="provider-money"><span>Saldo / crédito</span><strong id="openai-balance">—</strong></div>
+              <div class="provider-money"><span>Gasto</span><strong id="openai-spent">—</strong></div>
+              <div class="provider-money"><span>Limite / orçamento</span><strong id="openai-limit">—</strong></div>
+            </div>
+            <div class="billing-meta">
+              <span>Atualizado: <b id="openai-updated">—</b></span>
+              <span id="openai-message">Backend ainda não consultado.</span>
+            </div>
+            <a class="btn btn-secondary btn-full" href="https://platform.openai.com/settings/organization/billing/overview" target="_blank" rel="noopener noreferrer">Abrir faturamento da OpenAI</a>
+          </article>
+
+          <article class="provider-finance-card" data-provider-card="google">
+            <div class="provider-finance-head">
+              <div class="provider-logo">G</div>
+              <div>
+                <h3>Gemini / Google Cloud</h3>
+                <p id="google-account-label">Conta/projeto de faturamento</p>
+              </div>
+              <span id="google-status" class="badge off">Aguardando</span>
+            </div>
+            <div class="provider-money-grid">
+              <div class="provider-money"><span>Saldo / crédito</span><strong id="google-balance">—</strong></div>
+              <div class="provider-money"><span>Gasto</span><strong id="google-spent">—</strong></div>
+              <div class="provider-money"><span>Limite / orçamento</span><strong id="google-limit">—</strong></div>
+            </div>
+            <div class="billing-meta">
+              <span>Atualizado: <b id="google-updated">—</b></span>
+              <span id="google-message">Backend ainda não consultado.</span>
+            </div>
+            <a class="btn btn-secondary btn-full" href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir faturamento do Google Cloud</a>
+          </article>
+        </div>
+
+        <div class="panel billing-security-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Segurança</h2>
+              <p>As credenciais de billing ficam somente nas variáveis secretas do Cloudflare. O frontend envia apenas a sessão administrativa para validar o acesso.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="historico" class="section">
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Histórico financeiro da IA</h2><p>Entradas, retiradas e consumo em reais por empresa e provedor.</p></div>
+            <div class="history-filters">
+              <select id="historico-filtro" class="input compact-select"><option value="0">Todas as empresas</option></select>
+              <select id="historico-provedor" class="input compact-select"><option value="">Todos os provedores</option><option value="GEMINI">GEMINI</option><option value="OPENAI">OPENAI</option></select>
+            </div>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Data</th><th>Empresa</th><th>Provedor</th><th>Tipo</th><th>Valor</th><th>Saldo anterior</th><th>Saldo posterior</th><th>Observação</th></tr></thead><tbody id="historico-body"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody></table></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="credit-dialog" class="dialog">
+    <form id="credit-form" method="dialog">
+      <div class="dialog-head"><div><p class="eyebrow">SALDO EM REAIS</p><h2 id="dialog-title">Adicionar saldo</h2><p id="dialog-company"></p></div><button type="button" class="icon-btn" id="dialog-close">×</button></div>
+      <input id="form-empresa-id" type="hidden"><input id="form-operation" type="hidden"><input id="form-provedor" type="hidden"><input id="form-saldo-atual" type="hidden">
+      <label>Provedor<input id="form-provedor-view" class="input" type="text" readonly></label>
+      <label>Valor (R$)<input id="form-valor" class="input" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
+      <label>Observação<textarea id="form-observacao" class="input" rows="3" maxlength="1000"></textarea></label>
+      <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="dialog-cancel">Cancelar</button><button type="submit" class="btn btn-primary" id="dialog-submit">Confirmar</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="define-dialog" class="dialog">
+    <form id="define-form" method="dialog">
+      <div class="dialog-head"><div><p class="eyebrow">SALDO EM REAIS</p><h2>Definir saldo</h2><p id="define-company"></p></div><button type="button" class="icon-btn" id="define-close">×</button></div>
+      <input id="define-empresa-id" type="hidden"><input id="define-provedor" type="hidden"><input id="define-saldo-atual" type="hidden">
+      <label>Provedor<input id="define-provedor-view" class="input" type="text" readonly></label>
+      <label>Novo saldo (R$)<input id="define-saldo" class="input" type="number" min="0" step="0.01" inputmode="decimal" required></label>
+      <label>Observação<textarea id="define-observacao" class="input" rows="3" maxlength="1000"></textarea></label>
+      <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="define-cancel">Cancelar</button><button type="submit" class="btn btn-primary">Salvar saldo</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="agent-dialog" class="dialog wide-dialog">
+    <form id="agent-form" method="dialog">
+      <div class="dialog-head"><div><p class="eyebrow">CONFIGURAÇÃO DO ROBÔ</p><h2>Prompt do Agente IA</h2><p id="agent-company"></p></div><button type="button" class="icon-btn" id="agent-close">×</button></div>
+      <input id="agent-empresa-id" type="hidden">
+      <label>Provedor<select id="agent-provider" class="input" disabled><option value="GEMINI">GEMINI · WhatsApp</option><option value="OPENAI">OPENAI · CRM</option></select></label>
+      <label>Prompt do sistema<textarea id="agent-prompt" class="input prompt-editor" rows="10" maxlength="12000" placeholder="Exemplo: Sempre que o cliente entrar em contato, peça nome e CPF para agilizar o atendimento. Não invente informações e siga as regras do escritório."></textarea></label>
+      <p class="prompt-help">No provedor GEMINI, este texto é carregado no <strong>Agente WhatsApp Gemini</strong> antes de cada resposta da empresa selecionada.</p>
+      <div class="toggle-grid">
+        <label class="toggle-card"><input id="agent-active" type="checkbox"><span><strong>Agente ativo</strong><small>Permite que o robô responda.</small></span></label>
+        <label class="toggle-card"><input id="balance-active" type="checkbox"><span><strong>Controle de saldo ativo</strong><small>Bloqueia o uso quando o saldo não estiver liberado.</small></span></label>
+      </div>
+      <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="agent-cancel">Cancelar</button><button type="submit" class="btn btn-primary" id="agent-submit">Salvar configuração</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="detail-dialog" class="dialog wide-dialog">
+    <div class="dialog-head"><div><p class="eyebrow">REGISTRO COMPLETO</p><h2 id="detail-title">Detalhes</h2></div><button type="button" class="icon-btn" id="detail-close">×</button></div>
+    <pre id="detail-json" class="json-view"></pre>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/creditos.js"></script>
+</body>
+</html>

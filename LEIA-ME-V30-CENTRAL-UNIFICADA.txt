@@ -1,0 +1,10 @@
+AV ADMIN V30 - CENTRAL UNIFICADA DE IA
+
+Página: #gemini-real -> IA e Prompts · 3 CRMs.
+Abas Jurídico (Gemini/OpenAI), Agendamento (Gemini), Vendas (Gemini).
+Os campos de prompt não têm maxlength artificial e os contadores não impõem 12.000 caracteres.
+ATENÇÃO: backend n8n/Postgres pode impor limites de requisição/tokens, portanto não é possível garantir tamanho ilimitado de fato sem revisar os workflows.
+A tela mostra custos reais somente se o backend oficial retornar; saldo pré-pago não é inventado.
+Não há compra automática de créditos: pendente de ativação/faturamento do Google.
+Arquivos originais permanecem, inclusive funções, CSS e APIs.
+Envie CONTEÚDO da pasta ZIP para a RAIZ do repositório GitHub; não sobrescreva Secrets.

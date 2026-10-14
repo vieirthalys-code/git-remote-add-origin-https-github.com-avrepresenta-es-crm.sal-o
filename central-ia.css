@@ -1,0 +1,11 @@
+/* Módulo central de IA: reutiliza formulários/autenticação já existentes */
+.av-unified-tabs{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.av-unified-pane[hidden]{display:none!important}
+.av-unified-pane .section,.av-unified-pane section{display:block!important;max-width:100%}
+.av-unified-pane{margin-top:18px}
+.av-unified-finance{margin-bottom:14px}
+.av-unified-intro p{line-height:1.65}
+#gemini-real .avv-credit-actions{display:none!important}
+#gemini-real .avv-wallet{border:1px dashed #e4a787}
+#gemini-real .avv-wallet:before{content:'CARTEIRA INTERNA HISTÓRICA — NÃO É CRÉDITO REAL DO GOOGLE';display:block;font-size:12px;color:#aa440c;padding:10px}
+@media(max-width:750px){.av-unified-tabs{flex-direction:column}.av-unified-tabs .btn{width:100%}}

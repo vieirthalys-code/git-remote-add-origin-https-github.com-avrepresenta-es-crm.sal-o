@@ -1,0 +1,59 @@
+ADMIN SAAS — ATUALIZAÇÃO: SALDO EM REAIS + PROMPT POR EMPRESA
+
+ARQUIVOS DESTA ATUALIZAÇÃO
+- index.html
+- css/creditos.css
+- js/creditos.js
+
+NÃO SUBSTITUI
+- functions/api/billing/summary.js
+- functions/api/google/oauth/start.js
+- functions/api/google/oauth/callback.js
+- nenhuma configuração do Cloudflare
+- nenhum workflow n8n
+
+O QUE MUDA
+1. A aba "Créditos de IA" deixa de administrar quantidade de tokens e passa a mostrar saldo em reais por empresa e por provedor.
+2. Cada linha é isolada por empresa_id + provedor (GEMINI / OPENAI).
+3. Ações disponíveis: Adicionar, Retirar, Definir saldo, Configurar IA e Histórico.
+4. "Definir saldo" calcula a diferença entre o saldo atual e o desejado e executa ADICIONAR/RETIRAR no backend monetário existente.
+5. As movimentações enviam referencia_externa única para manter compatibilidade com o gerenciamento seguro de saldo.
+6. O histórico usa a rota monetária ia-admin/historico.
+7. A Visão Geral e a página Empresas passam a exibir valores monetários de IA em vez dos antigos contadores de tokens quando os dados do IA Admin são carregados.
+
+PROMPT DO WHATSAPP GEMINI
+- Em "Créditos de IA", localize a empresa e a linha GEMINI.
+- Clique em "Configurar IA".
+- Edite o "Prompt do sistema" e salve.
+- Também é possível controlar "Agente ativo" e "Controle de saldo ativo".
+
+VALIDAÇÃO COM O WORKFLOW ATUAL
+No workflow CRM_JURIDICO_PRINCIPAL_CREDITOS_IA_INTEGRADOS_V2:
+- o nó "WHATSAPP - CARREGAR CONFIG GEMINI" lê cfg.prompt_sistema e expõe como prompt_gemini;
+- o nó "AGENTE WHATSAPP GEMINI" usa prompt_gemini no systemMessage antes de responder.
+Por isso, o prompt salvo pelo painel para empresa_id + GEMINI é o prompt usado no atendimento do WhatsApp daquele tenant, desde que esse workflow V2 seja o workflow atualmente ativo.
+
+ROTAS USADAS PELO FRONTEND
+Base monetária:
+https://possessivebull-n8n.cloudfy.live/webhook/crm-juridico/ia-admin
+
+- POST /listar
+- POST /saldo
+- POST /configuracao
+- POST /historico
+
+O frontend continua usando a sessão administrativa Supabase já existente.
+
+COMO SUBIR NO GITHUB
+1. Abra a raiz do repositório conectado ao Cloudflare Pages.
+2. Use "Adicionar arquivo" > "Fazer upload de arquivos".
+3. Extraia este ZIP no computador.
+4. Arraste index.html, a pasta css e a pasta js PARA A RAIZ do repositório.
+5. Confirme as substituições e faça o commit.
+6. Aguarde o Cloudflare concluir a implantação automática.
+7. Abra "Créditos de IA" e clique em "Atualizar créditos".
+
+IMPORTANTE
+- Não suba a pasta inteira dentro de functions/api/billing.
+- Não cole chaves ou segredos no GitHub.
+- Esta atualização não mexe no Financeiro das APIs, OpenAI Billing, Google Billing ou BigQuery.
