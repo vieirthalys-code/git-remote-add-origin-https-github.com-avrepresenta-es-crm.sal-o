@@ -55,6 +55,13 @@ async function queryOpenAI(env, empresaId) {
   const orgId = String(companyEnv(env,'OPENAI_ORG_ID',empresaId) || '').trim();
   const baseUrl = String(companyEnv(env,'OPENAI_BILLING_URL',empresaId) || 'https://api.openai.com/v1/organization/costs').trim();
   const accountLabel = String(companyEnv(env,'OPENAI_ACCOUNT_LABEL',empresaId) || `OpenAI · empresa ${empresaId}`).trim();
+  const projectId = String(companyEnv(env,'OPENAI_PROJECT_ID',empresaId) || '').trim();
+  if (!projectId) {
+    return {ok:false,configured:false,provider:'OpenAI',spent:null,currency:'USD',updated_at:null,account_label:accountLabel,message:`Vincule o projeto da OpenAI configurando OPENAI_PROJECT_ID_EMPRESA_${empresaId} na Cloudflare. Sem esse vínculo, não exibiremos o gasto de toda a organização como se fosse desta empresa.`};
+  }
+  if (!/^proj_[A-Za-z0-9_-]+$/.test(projectId)) {
+    return {ok:false,configured:false,provider:'OpenAI',spent:null,currency:'USD',updated_at:null,account_label:accountLabel,message:'OPENAI_PROJECT_ID inválido para esta empresa.'};
+  }
 
   let headers = {'accept':'application/json'};
   if (adminKey) headers.authorization = `Bearer ${adminKey}`;
@@ -78,6 +85,9 @@ async function queryOpenAI(env, empresaId) {
     do {
       const url = new URL(baseUrl);
       url.searchParams.set('start_time',String(currentMonthStartUnix()));
+      url.searchParams.set('group_by','project_id');
+      url.searchParams.set('project_ids',projectId);
+      url.searchParams.set('limit','31');
       if (nextPage) url.searchParams.set('page',nextPage);
 
       const response = await fetch(url.toString(),{method:'GET',headers,cf:{cacheTtl:0,cacheEverything:false}});
@@ -93,6 +103,8 @@ async function queryOpenAI(env, empresaId) {
       for (const bucket of (Array.isArray(payload?.data) ? payload.data : [])) {
         for (const result of (Array.isArray(bucket?.results) ? bucket.results : [])) {
           const value = openAiAmount(result);
+          // Costs must only be attributed to the matching OpenAI project.
+          if (String(result?.project_id || '') !== projectId) continue;
           if (value !== null) spent += value;
           currency = openAiCurrency(result,currency);
         }
@@ -107,101 +119,10 @@ async function queryOpenAI(env, empresaId) {
     return {
       ok:true,configured:true,provider:'OpenAI',spent,currency,
       account_label:accountLabel,updated_at:new Date().toISOString(),
-      message:'Gasto real do mês obtido diretamente da organização OpenAI configurada para esta empresa.'
+      message:'Gasto mensal do projeto OpenAI confirmado pela API de custos; não é saldo pré-pago.'
     };
   } catch(error) {
     return {ok:false,configured:true,provider:'OpenAI',spent:null,currency,account_label:accountLabel,updated_at:new Date().toISOString(),message:`OpenAI: ${error?.message || 'Falha ao consultar custos.'}`};
-  }
-}
-
-function validBigQueryTable(value) {
-  const table = String(value || '').trim().replace(/^`|`$/g,'');
-  return /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_$-]+$/.test(table) ? table : null;
-}
-
-async function getGoogleAccessToken(env, empresaId) {
-  const clientId = String(env.GOOGLE_OAUTH_CLIENT_ID || '').trim();
-  const clientSecret = String(env.GOOGLE_OAUTH_CLIENT_SECRET || '').trim();
-  const refreshToken = String(companyEnv(env,'GOOGLE_OAUTH_REFRESH_TOKEN',empresaId) || '').trim();
-  if (!clientId || !clientSecret || !refreshToken) throw new Error('OAuth do Google não está completo para esta empresa.');
-
-  const body = new URLSearchParams({client_id:clientId,client_secret:clientSecret,refresh_token:refreshToken,grant_type:'refresh_token'});
-  const response = await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body});
-  const payload = await response.json().catch(()=>({}));
-  if (!response.ok || !payload?.access_token) throw new Error(payload?.error_description || payload?.error || `Falha OAuth Google (HTTP ${response.status}).`);
-  return payload.access_token;
-}
-
-function bigQueryRowsToObjects(payload) {
-  const fields = Array.isArray(payload?.schema?.fields) ? payload.schema.fields : [];
-  const rows = Array.isArray(payload?.rows) ? payload.rows : [];
-  return rows.map(row => {
-    const out = {};
-    const values = Array.isArray(row?.f) ? row.f : [];
-    fields.forEach((field,i)=>{ out[field.name] = values[i]?.v ?? null; });
-    return out;
-  });
-}
-
-async function runBigQuery(env, empresaId, accessToken, query) {
-  const projectId = String(companyEnv(env,'GOOGLE_CLOUD_PROJECT_ID',empresaId) || '').trim();
-  const location = String(companyEnv(env,'GOOGLE_BIGQUERY_LOCATION',empresaId) || '').trim();
-  if (!projectId) throw new Error('Projeto Google Cloud não configurado para esta empresa.');
-
-  const body = {query,useLegacySql:false,timeoutMs:20000};
-  if (location) body.location = location;
-
-  const response = await fetch(`https://bigquery.googleapis.com/bigquery/v2/projects/${encodeURIComponent(projectId)}/queries`,{
-    method:'POST',
-    headers:{'authorization':`Bearer ${accessToken}`,'content-type':'application/json','accept':'application/json'},
-    body:JSON.stringify(body),
-    cf:{cacheTtl:0,cacheEverything:false}
-  });
-  let payload = await response.json().catch(()=>({}));
-  if (!response.ok) throw new Error(payload?.error?.message || `BigQuery HTTP ${response.status}`);
-
-  if (!payload?.jobComplete && payload?.jobReference?.jobId) {
-    const u = new URL(`https://bigquery.googleapis.com/bigquery/v2/projects/${encodeURIComponent(projectId)}/queries/${encodeURIComponent(payload.jobReference.jobId)}`);
-    u.searchParams.set('timeoutMs','20000');
-    const loc = payload?.jobReference?.location || location;
-    if (loc) u.searchParams.set('location',loc);
-    const poll = await fetch(u.toString(),{headers:{'authorization':`Bearer ${accessToken}`,'accept':'application/json'},cf:{cacheTtl:0,cacheEverything:false}});
-    payload = await poll.json().catch(()=>({}));
-    if (!poll.ok) throw new Error(payload?.error?.message || `BigQuery HTTP ${poll.status}`);
-  }
-  return payload;
-}
-
-async function queryGoogle(env, empresaId) {
-  const projectId = String(companyEnv(env,'GOOGLE_CLOUD_PROJECT_ID',empresaId) || '').trim();
-  const table = validBigQueryTable(companyEnv(env,'GOOGLE_BILLING_TABLE',empresaId));
-  const refreshToken = String(companyEnv(env,'GOOGLE_OAUTH_REFRESH_TOKEN',empresaId) || '').trim();
-  const accountLabel = projectId || `Google Cloud · empresa ${empresaId}`;
-
-  if (!projectId || !table || !refreshToken) {
-    const missing = [];
-    if (!refreshToken) missing.push('OAuth');
-    if (!projectId) missing.push('projeto');
-    if (!table) missing.push('tabela de faturamento');
-    return {ok:false,configured:false,provider:'Google Cloud',spent:null,currency:'USD',updated_at:null,account_label:accountLabel,message:`Google real ainda não configurado para esta empresa: ${missing.join(', ')}.`};
-  }
-
-  try {
-    const accessToken = await getGoogleAccessToken(env,empresaId);
-    const query = `
-      SELECT
-        COALESCE(SUM(cost),0) + COALESCE(SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) AS c),0)),0) AS spent,
-        ANY_VALUE(currency) AS currency
-      FROM \`${table}\`
-      WHERE usage_start_time >= TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), MONTH)
-    `;
-    const payload = await runBigQuery(env,empresaId,accessToken,query);
-    const first = bigQueryRowsToObjects(payload)[0] || {};
-    const spent = asNumber(first.spent) ?? 0;
-    const currency = String(first.currency || companyEnv(env,'GOOGLE_DEFAULT_CURRENCY',empresaId) || 'USD').trim().toUpperCase();
-    return {ok:true,configured:true,provider:'Google Cloud',spent,currency,account_label:projectId,updated_at:new Date().toISOString(),message:'Gasto real do mês obtido do Cloud Billing Export no BigQuery desta empresa.'};
-  } catch(error) {
-    return {ok:false,configured:true,provider:'Google Cloud',spent:null,currency:'USD',account_label:accountLabel,updated_at:new Date().toISOString(),message:`Google Cloud: ${error?.message || 'Falha ao consultar faturamento.'}`};
   }
 }
 
@@ -213,6 +134,6 @@ export async function onRequestGet({request,env}) {
   const empresaId = Number(url.searchParams.get('empresa_id') || 0);
   if (!Number.isInteger(empresaId) || empresaId <= 0) return json({ok:false,message:'empresa_id inválido.'},400);
 
-  const [openai,google] = await Promise.all([queryOpenAI(env,empresaId),queryGoogle(env,empresaId)]);
-  return json({ok:true,empresa_id:empresaId,generated_at:new Date().toISOString(),providers:{openai,google}});
+  const openai = await queryOpenAI(env,empresaId);
+  return json({ok:true,empresa_id:empresaId,generated_at:new Date().toISOString(),providers:{openai}});
 }

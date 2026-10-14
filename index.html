@@ -41,6 +41,19 @@
 #av-central-v31 #av31-status[data-tone="success"] {color:#256344;background:#f0fbf5;border-color:#b7dfcc}
 #av-central-v31 .av-v31-foot {margin-top:20px;font-size:12px;color:#667588;line-height:1.6}
 @media(max-width:700px){#av-central-v31 .av-v31-fields{grid-template-columns:1fr}#av-central-v31 .av-v31-actions{align-items:stretch;flex-direction:column}#av-central-v31 .av-v31-actions button{width:100%}}
+
+/* V36 OpenAI-only visual billing; keep legacy Venda wallet DOM for backward-compatible JS selectors, but remove its financial actions from UI. */
+#avv-wallet {display:none!important}
+.ia-real-grid {grid-template-columns:minmax(0,1fr)!important}
+#gemini-real .gemini-module {box-shadow:0 8px 22px rgba(15,23,42,.025)}
+#gemini-real .gemini-module:hover {border-color:#f7ad85}
+#gemini-real .av-v31-finance a {color:#c24d14; text-underline-offset:2px}
+.av-openai-sales-note {border:1px solid #f2d2bf;background:#fffaf7;border-radius:14px;padding:18px;margin:16px 0;line-height:1.55}
+.av-openai-sales-note h4 {margin:0 0 7px;color:#923c13;font-size:16px}
+.av-openai-sales-note p {margin:0 0 12px;color:#536273}
+.av-openai-sales-note a {display:inline-flex;align-items:center;gap:6px;border:1px solid #f2ab86;color:#c24d14;background:#fff;padding:10px 14px;border-radius:10px;text-decoration:none}
+.av-openai-sales-note a:hover {background:#fff2e9}
+@media(max-width:700px) {.av-openai-sales-note a{width:100%;justify-content:center}}
 </style>
 </head>
 <body>
@@ -83,7 +96,7 @@
         <a class="nav-link" href="#crm-vendas" data-section="crm-vendas">CRM Vendas 360 · Meta</a>
         <a class="nav-link" href="#ia-empresa" data-section="ia-empresa">IA por Empresa</a>
         <a class="nav-link" href="#prompts-agenda" data-section="prompts-agenda">Prompts CRM de Agenda</a>
-        <a class="nav-link" href="#gemini-real" data-section="gemini-real">IA e Prompts · 3 CRMs</a>
+        <a class="nav-link" href="#gemini-real" data-section="gemini-real">OpenAI e Prompts · 3 CRMs</a>
       </nav>
 
       <div class="sidebar-footer">
@@ -103,7 +116,7 @@
       <section id="visao-geral" class="section active">
         <div class="stats-grid simple-stats">
           <article class="stat-card"><span>Empresas</span><strong id="stat-empresas">0</strong></article>
-          <article class="stat-card"><span>Prompts Gemini configurados</span><strong id="stat-prompts">0</strong></article>
+          <article class="stat-card"><span>Prompts de IA configurados</span><strong id="stat-prompts">0</strong></article>
           <article class="stat-card"><span>Testes grátis ativos</span><strong id="stat-trials">0</strong></article>
         </div>
 
@@ -155,7 +168,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Empresa</th><th>ID</th><th>Status</th><th>Prompt Gemini</th><th>Ações</th></tr></thead>
+              <thead><tr><th>Empresa</th><th>ID</th><th>Status</th><th>Prompt de IA</th><th>Ações</th></tr></thead>
               <tbody id="empresas-body"><tr><td colspan="5" class="empty">Carregando...</td></tr></tbody>
             </table>
           </div>
@@ -350,7 +363,7 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
           <small>O n8n deverá carregar esta configuração no fluxo do robô antes de cada atendimento. O salvamento não ativa um chatbot por si só.</small>
         </form>
         <div class="avv-block avv-wallet" id="avv-wallet">
-          <div class="avv-credit-head"><div><h4>Saldo de IA por empresa · Gemini</h4><p>Créditos em reais alocados à empresa pela AV. Esta carteira é independente da recarga oficial feita no Google AI Studio.</p></div><span class="avv-chip">BRL</span></div>
+          <div class="avv-credit-head"><div><h4>Carteira interna antiga — desativada na interface</h4><p>Dados históricos mantidos por compatibilidade. Não representam créditos reais da OpenAI.</p></div><span class="avv-chip">LEGADO</span></div>
           <div class="avv-credit-amount"><span>Saldo alocado disponível</span><strong id="avv-credit-balance">—</strong><small id="avv-credit-updated">Aguardando consulta</small></div>
           <div class="avv-credit-actions">
             <label for="avv-topup-amount">Registrar alocação (R$)</label>
@@ -360,8 +373,12 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
           </div>
           <p id="avv-credit-status" class="avv-credit-status" role="status" aria-live="polite"></p>
           <h4>Movimentações da empresa</h4><div id="avv-transactions" class="avv-transactions"><p>Selecione uma empresa para consultar.</p></div>
-          <small>Recarga interna não transfere dinheiro ao Google. Os descontos automáticos exigem que o workflow Gemini registre cada chamada com custo real calculado.</small>
-          <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" class="avv-credit-link">Abrir faturamento no Google AI Studio ↗</a>
+          <small>Este módulo histórico está oculto na interface. A nova cobrança é feita diretamente pela OpenAI.</small>
+        </div>
+        <div class="av-openai-sales-note">
+          <h4>OpenAI API · faturamento real</h4>
+          <p>O agente de Vendas utiliza o provedor configurado no n8n. A antiga carteira de créditos internos foi ocultada: ela não representa dinheiro depositado na OpenAI. O histórico anterior permanece preservado no banco.</p>
+          <a href="https://platform.openai.com/settings/organization/billing/overview" target="_blank" rel="noopener noreferrer">Consultar créditos e recarregar na OpenAI ↗</a>
         </div>
         <div class="avv-block"><h4>WhatsApp oficial da Meta</h4><p id="avv-meta">Integração não configurada.</p><p>O canal do CRM exibirá a conexão real somente após configurar API, WABA, webhook e n8n no backend. Nenhum token é salvo neste painel.</p></div>
       </div>
@@ -374,7 +391,7 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
           <div>
             <p class="eyebrow">DINHEIRO REAL DOS PROVEDORES</p>
             <h2>IA por Empresa</h2>
-            <p>Sem saldo interno, sem tokens virtuais e sem carteira do sistema. Toda nova empresa cadastrada no CRM aparece automaticamente aqui pelo <code>empresa_id</code>, com OpenAI, Gemini e campo de prompt próprios.</p>
+            <p>Finanças da OpenAI por empresa, sem simular recargas ou misturar gasto mensal com créditos comprados. Cada empresa mantém seu próprio prompt do agente.</p>
           </div>
           <select id="ia-company-select" class="input compact-select"></select>
         </div>
@@ -402,69 +419,48 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
             </div>
           </article>
 
-          <article class="provider-finance-card">
-            <div class="provider-finance-head">
-              <div class="provider-logo">G</div>
-              <div>
-                <h3>Gemini / Google Cloud</h3>
-                <p id="google-account-label">Projeto real da empresa</p>
-              </div>
-              <span id="google-status" class="badge off">Aguardando</span>
-            </div>
-            <div class="real-money-box">
-              <span>Gasto real no mês</span>
-              <strong id="google-spent">—</strong>
-            </div>
-            <div class="billing-meta">
-              <span>Atualizado: <b id="google-updated">—</b></span>
-              <span id="google-message">Selecione uma empresa.</span>
-            </div>
-            <div class="provider-actions">
-              <a class="btn btn-primary btn-full" href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir cobrança real do Google Cloud</a>
-              <a id="google-connect-link" class="btn btn-secondary btn-full" href="/api/google/oauth/start">Conectar Google desta empresa</a>
-            </div>
-          </article>
+
         </div>
 
         <div class="panel prompt-real-panel">
           <div class="panel-head">
             <div>
               <p class="eyebrow">PROMPT DO WHATSAPP</p>
-              <h2>Prompt do Gemini</h2>
+              <h2>Prompt do agente de IA</h2>
               <p id="prompt-company-meta">Selecione uma empresa.</p>
               <p class="prompt-auto-note">Cada nova empresa do CRM recebe automaticamente esta área de prompt; basta escrever e salvar.</p>
             </div>
           </div>
           <form id="prompt-form">
-            <textarea id="prompt-gemini" class="input prompt-editor" rows="11" placeholder="Exemplo: Sempre que o cliente entrar em contato, peça nome e CPF para agilizar o atendimento."></textarea>
+            <textarea id="prompt-gemini" class="input prompt-editor" rows="11" placeholder="Exemplo: Sempre que o cliente entrar em contato, peça os dados necessários ao atendimento."></textarea>
             <div class="prompt-actions">
               <button id="prompt-save-btn" class="btn btn-primary" type="submit">Salvar prompt</button>
             </div>
           </form>
-          <p class="prompt-help">Este é o prompt usado pelo Agente WhatsApp Gemini da empresa selecionada.</p>
+          <p class="prompt-help">Este prompt permanece salvo pelo mecanismo atual do CRM Jurídico. Ao trocar o modelo no n8n, configure o workflow para ler o mesmo campo <code>prompt_sistema</code>, preservando os prompts existentes.</p>
         </div>
 
         <div class="panel real-only-note">
           <strong>Somente cobrança real.</strong>
-          <p>Este painel não cria saldo, crédito, token ou orçamento interno. Os botões de pagamento levam ao faturamento oficial dos provedores.</p>
+          <p>O painel mostra custos oficiais quando o projeto OpenAI estiver vinculado. O saldo pré-pago real deve ser consultado na OpenAI Platform. Projetos da mesma organização compartilham o saldo de créditos dessa organização.</p>
         </div>
       </section>
 
       <!-- Gestão de prompts para o CRM de Agendamento; independente do CRM Jurídico. -->
 <section id="gemini-real" class="section">
  <div class="panel gemini-central">
-  <p class="eyebrow">FATURAMENTO REAL · GOOGLE AI STUDIO</p>
-  <h2>Central Gemini — Jurídico, Vendas e Agendamento</h2>
-  <p>Gerencie projetos e contas Google de cada empresa, sem confundir créditos internos com dinheiro comprado. As recargas são feitas no Google AI Studio. O saldo pago oficial só pode ser exibido aqui após integração autorizada com uma fonte oficial.</p>
-  <div class="gemini-alert" role="status"><strong>Integração financeira: pendente.</strong> Nenhum botão desta tela compra créditos, consulta saldo oficial ou altera dinheiro. O projeto Gemini principal está em nível gratuito/sem créditos confirmados e o faturamento dos projetos novos ainda precisa ser regularizado.</div>
+  <p class="eyebrow">GESTÃO DE IA · OPENAI API</p>
+  <h2>Central OpenAI — Jurídico, Vendas e Agendamento</h2>
+  <p>Gerencie os prompts das empresas e consulte o faturamento oficial da OpenAI. O saldo pré-pago pertence à organização OpenAI; os projetos ajudam a separar o <em>consumo</em> de cada empresa, não o dinheiro comprado.</p>
+  <div class="gemini-alert" role="status"><strong>Saldo oficial não integrado automaticamente.</strong> Consulte créditos pré-pagos diretamente na OpenAI. Os valores de gasto por empresa só aparecem quando uma chave administrativa e o projeto OpenAI correspondente estiverem vinculados. Nenhum botão desta página efetua pagamento.</div>
   <div class="gemini-grid">
-   <article class="gemini-module"><h3>CRM Jurídico</h3><p>Faturamento e gastos de empresas jurídicas.</p><span class="gemini-status">Saldo oficial não conectado</span><div class="gemini-links"><a href="https://aistudio.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir recarga oficial ↗</a><button type="button" data-go="ia-empresa">Gerenciar IA</button></div></article>
-   <article class="gemini-module"><h3>CRM Vendas 360</h3><p>Projetos Gemini e faturamento por empresa comercial.</p><span class="gemini-status">Saldo oficial não conectado</span><div class="gemini-links"><a href="https://aistudio.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir recarga oficial ↗</a><button type="button" data-go="crm-vendas">Abrir empresas de Vendas</button></div></article>
-   <article class="gemini-module"><h3>CRM de Agendamento</h3><p>Projetos Gemini e faturamento dos agentes de agenda.</p><span class="gemini-status">Saldo oficial não conectado</span><div class="gemini-links"><a href="https://aistudio.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir recarga oficial ↗</a><button type="button" data-go="prompts-agenda">Abrir prompts de Agenda</button></div></article>
+   <article class="gemini-module"><h3>CRM Jurídico</h3><p>Prompt, faturamento e despesas de empresas jurídicas.</p><span class="gemini-status">Saldo pré-pago: consultar na OpenAI</span><div class="gemini-links"><a href="https://platform.openai.com/settings/organization/billing/overview" target="_blank" rel="noopener noreferrer">Abrir créditos OpenAI ↗</a><button type="button" data-go="ia-empresa">Gerenciar IA</button></div></article>
+   <article class="gemini-module"><h3>CRM Vendas 360</h3><p>Projetos OpenAI, prompts e despesas por empresa comercial.</p><span class="gemini-status">Saldo pré-pago: consultar na OpenAI</span><div class="gemini-links"><a href="https://platform.openai.com/settings/organization/billing/overview" target="_blank" rel="noopener noreferrer">Abrir créditos OpenAI ↗</a><button type="button" data-go="crm-vendas">Abrir empresas de Vendas</button></div></article>
+   <article class="gemini-module"><h3>CRM de Agendamento</h3><p>Projetos OpenAI, prompts e despesas dos agentes de agenda.</p><span class="gemini-status">Saldo pré-pago: consultar na OpenAI</span><div class="gemini-links"><a href="https://platform.openai.com/settings/organization/billing/overview" target="_blank" rel="noopener noreferrer">Abrir créditos OpenAI ↗</a><button type="button" data-go="prompts-agenda">Abrir prompts de Agenda</button></div></article>
   </div>
   <div class="av-central-v31" id="av-central-v31">
     <h3>Empresas, prompts e valores — em um só lugar</h3>
-    <p>Selecione o CRM e a empresa. Os prompts são salvos pelos mesmos formulários que já funcionam. Valores só são chamados de saldo quando comprovados pelo provedor.</p>
+    <p>Selecione o CRM e a empresa. Os prompts usam a gravação atual, preservando o conteúdo existente; ao migrar os workflows para OpenAI, leia o mesmo <code>prompt_sistema</code>.</p>
     <div class="av-v31-tabs" role="group" aria-label="Selecionar CRM">
       <button type="button" class="av-v31-tab is-active" data-av31-crm="juridico">Jurídico</button>
       <button type="button" class="av-v31-tab" data-av31-crm="agenda">Agendamento</button>
@@ -475,9 +471,8 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
       <button type="button" id="av31-refresh" class="btn btn-secondary">Sincronizar empresas</button>
     </div>
     <div class="av-v31-finance">
-      <div><small>Gemini · saldo pré-pago oficial</small><strong>Não consultado</strong><span>Pagamento e fonte oficial de saldo pendentes.</span></div>
-      <div id="av31-openai-box"><small>OpenAI · saldo pré-pago oficial</small><strong>Não consultado</strong><span>Não confundir gasto mensal com saldo.</span></div>
-      <div><small>Consumo reportado</small><strong id="av31-spent">Aguardando dados</strong><span id="av31-spent-help">Somente custos oficiais; sem conversão cambial estimada.</span></div>
+      <div id="av31-openai-box"><small>OpenAI · créditos pré-pagos</small><strong>Consultar na OpenAI</strong><span>O saldo pertence à organização e não é dividido automaticamente por empresa. <a href="https://platform.openai.com/settings/organization/billing/overview" target="_blank" rel="noopener noreferrer">Ver saldo oficial ↗</a></span></div>
+      <div><small>Gasto OpenAI no mês</small><strong id="av31-spent">Aguardando dados</strong><span id="av31-spent-help">Valor oficial em USD quando o projeto OpenAI da empresa estiver configurado.</span></div>
     </div>
     <form id="av31-form">
       <label for="av31-prompt">Prompt da empresa <small>(sem limite artificial de caracteres no navegador)</small></label>
@@ -485,9 +480,9 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
       <div class="av-v31-actions"><small id="av31-count">0 caracteres</small><button type="submit" id="av31-save" class="btn btn-primary" disabled>Salvar prompt da empresa</button></div>
       <p id="av31-status" role="status" aria-live="polite">Escolha um CRM para consultar as empresas diretamente pelo servidor.</p>
     </form>
-    <p class="av-v31-foot">Os valores de Gemini e OpenAI dependem de fontes oficiais. O painel não cria créditos e não executa pagamentos. Para Vendas, a carteira interna antiga permanece separada e não representa dinheiro no Google.</p>
+    <p class="av-v31-foot">A OpenAI cobra em USD. Gasto por projeto não é saldo pré-pago por empresa. O saldo é da organização OpenAI; para créditos realmente independentes, use organizações distintas com faturamento próprio. A antiga carteira interna de Vendas não é utilizada neste painel.</p>
   </div>
-  <div class="gemini-steps"><h3>Ativação por empresa (sem cobrança automática)</h3><ol><li>Vincule um projeto Google Cloud exclusivo à empresa.</li><li>Associe uma conta de faturamento ativa e exclusiva ao projeto, conforme regras do Google.</li><li>Crie a chave no projeto e guarde-a apenas nas credenciais seguras do backend.</li><li>Faça a compra de créditos reais no Google AI Studio e confirme o saldo lá.</li><li>Teste a chamada Gemini pelo backend da empresa e registre consumo por projeto.</li></ol><p>Enquanto as contas de faturamento estiverem encerradas ou com pagamento pendente, a integração permanece em preparação. Este painel não emite pagamentos.</p></div>
+  <div class="gemini-steps"><h3>Como ativar o consumo real por empresa</h3><ol><li>Crie ou identifique um projeto OpenAI para cada empresa e CRM.</li><li>Configure no backend os identificadores de projeto e uma chave administrativa em Secret, nunca no GitHub.</li><li>No n8n, selecione a credencial e o modelo OpenAI correspondente, lendo o campo <code>prompt_sistema</code> já salvo.</li><li>Confira o saldo pré-pago real na OpenAI Platform e os gastos oficiais por projeto aqui após a integração.</li></ol><p>O painel não compra créditos nem transfere valores entre empresas. Alterar o provedor no painel não altera o modelo utilizado pelos workflows.</p></div>
  </div>
 </section>
       <section id="prompts-agenda" class="section">
@@ -763,10 +758,9 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
     renderFinance();
   }
   async function renderFinance() {
-    el('av31-openai-box').hidden=state.crm!=='juridico';
     const spent=el('av31-spent'), help=el('av31-spent-help');
     if(state.crm!=='juridico'){
-      spent.textContent='Não disponível';help.textContent='Consumo oficial ainda não integrado para este CRM. Os valores internos não são saldo pago.';
+      spent.textContent='Não conectado';help.textContent='Vinculação do projeto OpenAI deste CRM com a API de custos ainda pendente. Consulte os créditos na OpenAI Platform.';
       return;
     }
     const selected=choice.value, seq=state.seq;
@@ -780,8 +774,8 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
       if(state.seq!==seq||state.crm!=='juridico'||choice.value!==selected)return;
       if(!res.ok||!data?.providers)throw new Error(data?.message||'Financeiro indisponível');
       function format(v){if(v?.ok!==true||v.spent==null)return 'Indisponível';const amount=Number(v.spent);if(!Number.isFinite(amount))return 'Indisponível';try{return new Intl.NumberFormat('pt-BR',{style:'currency',currency:v.currency||'USD'}).format(amount);}catch{return String(amount)+' '+String(v.currency||'');}}
-      spent.textContent='Gemini: '+format(data.providers.google)+' · OpenAI: '+format(data.providers.openai);
-      help.textContent='Gastos mensais informados pelos provedores. Nenhum valor desta tela equivale a saldo pré-pago.';
+      spent.textContent=format(data.providers.openai);
+      help.textContent=data.providers.openai?.message || 'Gasto oficial em USD do projeto OpenAI. Isso não representa saldo pré-pago.';
     } catch(e) {if(state.seq!==seq||state.crm!=='juridico'||choice.value!==selected)return;spent.textContent='Indisponível';help.textContent='Não foi possível consultar gastos oficiais: '+errorMessage(e);}
   }
   function allowDiscard() {return !state.dirty||confirm('O prompt foi editado e ainda não foi salvo. Descartar as alterações?');}
