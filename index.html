@@ -7,6 +7,7 @@
   <title>Admin SaaS | AV Representações & Tecnologia</title>
   <link rel="icon" type="image/png" href="./assets/av-logo.png?v=20261005-contratos">
   <link rel="stylesheet" href="./css/creditos.css?v=20261005-asaas-primeiro">
+  <link rel="stylesheet" href="./css/vendas-admin.css?v=20261013-carteira-v2">
   <link rel="stylesheet" href="./css/agenda-prompts.css?v=20261013-agenda-admin">
 </head>
 <body>
@@ -46,6 +47,7 @@
         <a class="nav-link" href="#empresas" data-section="empresas">Empresas</a>
         <a class="nav-link" href="#contratos" data-section="contratos">Contratos & Planos</a>
         <a class="nav-link" href="#crm-juridico" data-section="crm-juridico">CRM Jurídico</a>
+        <a class="nav-link" href="#crm-vendas" data-section="crm-vendas">CRM Vendas 360 · Meta</a>
         <a class="nav-link" href="#ia-empresa" data-section="ia-empresa">IA por Empresa</a>
         <a class="nav-link" href="#prompts-agenda" data-section="prompts-agenda">Prompts CRM de Agenda</a>
       </nav>
@@ -268,6 +270,70 @@
 
         <div id="crm-module-content"></div>
       </section>
+
+      <section id="crm-vendas" class="section">
+  <div class="panel avv-panel">
+    <div class="panel-head">
+      <div><p class="eyebrow">AV REPRESENTAÇÕES · GESTÃO MULTIEMPRESAS</p><h2>CRM Vendas 360 · WhatsApp Meta e Agente IA</h2>
+      <p>Gerencie testes gratuitos e instruções do robô por empresa, de forma independente do CRM Jurídico. A conexão com a Meta continua não configurada.</p></div>
+      <button class="btn btn-secondary" type="button" id="avv-refresh">Atualizar empresas</button>
+    </div>
+    <div class="access-kpis avv-stats">
+      <div class="access-kpi"><span>Empresas do Vendas 360</span><strong id="avv-total">—</strong></div>
+      <div class="access-kpi"><span>Testes ativos</span><strong id="avv-trials">—</strong></div>
+      <div class="access-kpi"><span>Robôs habilitados</span><strong id="avv-agents">—</strong></div>
+    </div>
+    <div id="avv-status" class="avv-status" role="status" aria-live="polite">Aguardando carregamento do módulo de vendas.</div>
+    <div class="avv-toolbar"><input id="avv-search" class="input" type="search" placeholder="Pesquisar empresa pelo nome ou UUID" aria-label="Pesquisar empresas de vendas"></div>
+    <div class="avv-layout">
+      <div id="avv-list" class="avv-list" aria-label="Empresas CRM Vendas"><p class="empty">Clique em Atualizar empresas.</p></div>
+      <div class="avv-editor" id="avv-editor" hidden>
+        <h3 id="avv-name">Empresa</h3>
+        <p class="avv-sub" id="avv-id"></p>
+        <div class="avv-tags" id="avv-tags"></div>
+        <div class="avv-block">
+          <h4>Teste grátis e liberação</h4>
+          <p>A política é registrada por empresa. Para bloquear o login e as sessões de verdade, a validação precisa estar integrada ao fluxo de autenticação do CRM. Deixe desativado até confirmar essa integração.</p>
+          <label class="avv-check"><input type="checkbox" id="avv-gate"> Ativar política de acesso da empresa (requer validação pelo backend)</label>
+          <label class="avv-check"><input type="checkbox" id="avv-manual"> Liberação manual (independente do teste)</label>
+          <button id="avv-save-policy" class="btn btn-secondary" type="button">Salvar política de acesso</button>
+          <p id="avv-trial-text" class="avv-trial-text"></p>
+          <div class="avv-actions">
+            <button data-avv-days="7" class="btn btn-secondary btn-small" type="button">+ 7 dias</button>
+            <button data-avv-days="15" class="btn btn-secondary btn-small" type="button">+ 15 dias</button>
+            <button data-avv-days="30" class="btn btn-secondary btn-small" type="button">+ 30 dias</button>
+            <button id="avv-end-trial" class="btn btn-secondary btn-small" type="button">Encerrar teste</button>
+          </div>
+          <small>Os dias são contados a partir de agora. O vencimento só bloqueará o acesso quando o backend de login e sessões consultar essa política.</small>
+        </div>
+        <form id="avv-prompt-form" class="avv-block">
+          <h4>Prompt do robô de vendas</h4>
+          <label class="avv-check"><input type="checkbox" id="avv-agent"> Agente de IA habilitado</label>
+          <label for="avv-prompt">Instruções do sistema para a empresa</label>
+          <textarea class="input prompt-editor" id="avv-prompt" rows="11" maxlength="12000" placeholder="Ex.: Você é o assistente comercial...
+Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textarea>
+          <div class="avv-editor-footer"><small id="avv-count">0 / 12.000 caracteres</small><button class="btn btn-primary" type="submit">Salvar prompt e agente</button></div>
+          <small>O n8n deverá carregar esta configuração no fluxo do robô antes de cada atendimento. O salvamento não ativa um chatbot por si só.</small>
+        </form>
+        <div class="avv-block avv-wallet" id="avv-wallet">
+          <div class="avv-credit-head"><div><h4>Saldo de IA por empresa · Gemini</h4><p>Créditos em reais alocados à empresa pela AV. Esta carteira é independente da recarga oficial feita no Google AI Studio.</p></div><span class="avv-chip">BRL</span></div>
+          <div class="avv-credit-amount"><span>Saldo alocado disponível</span><strong id="avv-credit-balance">—</strong><small id="avv-credit-updated">Aguardando consulta</small></div>
+          <div class="avv-credit-actions">
+            <label for="avv-topup-amount">Registrar alocação (R$)</label>
+            <input id="avv-topup-amount" class="input" type="number" min="0.01" max="1000000" step="0.01" placeholder="Ex.: 30,00" inputmode="decimal">
+            <button id="avv-topup" class="btn btn-primary" type="button">Registrar recarga interna</button>
+            <button id="avv-credit-refresh" class="btn btn-secondary" type="button">Atualizar saldo</button>
+          </div>
+          <p id="avv-credit-status" class="avv-credit-status" role="status" aria-live="polite"></p>
+          <h4>Movimentações da empresa</h4><div id="avv-transactions" class="avv-transactions"><p>Selecione uma empresa para consultar.</p></div>
+          <small>Recarga interna não transfere dinheiro ao Google. Os descontos automáticos exigem que o workflow Gemini registre cada chamada com custo real calculado.</small>
+          <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" class="avv-credit-link">Abrir faturamento no Google AI Studio ↗</a>
+        </div>
+        <div class="avv-block"><h4>WhatsApp oficial da Meta</h4><p id="avv-meta">Integração não configurada.</p><p>O canal do CRM exibirá a conexão real somente após configurar API, WABA, webhook e n8n no backend. Nenhum token é salvo neste painel.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
 
       <section id="ia-empresa" class="section">
         <div class="panel ia-real-selector">
@@ -519,5 +585,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./js/creditos.js?v=20261013-agenda-admin"></script>
+  <script src="./js/vendas-admin.js?v=20261013-carteira-v2" defer></script>
 </body>
 </html>

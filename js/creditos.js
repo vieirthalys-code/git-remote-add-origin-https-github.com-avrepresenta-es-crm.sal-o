@@ -8,6 +8,12 @@
   const ALLOWED_ADMIN_EMAIL = 'avrep.tech@gmail.com';
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  // Leitura da sessão já validada do painel; o servidor confirma a identidade novamente.
+  window.AV_ADMIN_AUTH = { async getToken() {
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data?.session?.access_token) return null;
+    return data.session.access_token;
+  }};
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
 
@@ -1124,7 +1130,7 @@
   function showSection(name) {
     $$('.section').forEach(s=>s.classList.toggle('active',s.id===name));
     $$('.nav-link').forEach(l=>l.classList.toggle('active',l.dataset.section===name));
-    const titles = {'visao-geral':'Visão geral','empresas':'Empresas','contratos':'Contratos & Planos','crm-juridico':'CRM Jurídico','ia-empresa':'IA por Empresa','prompts-agenda':'Prompts CRM de Agenda'};
+    const titles = {'visao-geral':'Visão geral','empresas':'Empresas','contratos':'Contratos & Planos','crm-juridico':'CRM Jurídico','ia-empresa':'IA por Empresa','prompts-agenda':'Prompts CRM de Agenda','crm-vendas':'CRM Vendas 360 · Meta'};
     $('#page-title').textContent = titles[name] || 'Admin SaaS';
     if (window.innerWidth<900) $('#sidebar').classList.remove('open');
   }
