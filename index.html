@@ -51,7 +51,7 @@
         <a class="nav-link" href="#crm-vendas" data-section="crm-vendas">CRM Vendas 360 · Meta</a>
         <a class="nav-link" href="#ia-empresa" data-section="ia-empresa">IA por Empresa</a>
         <a class="nav-link" href="#prompts-agenda" data-section="prompts-agenda">Prompts CRM de Agenda</a>
-        <a class="nav-link" href="#gemini-real" data-section="gemini-real">Gemini · 3 CRMs</a>
+        <a class="nav-link" href="#gemini-real" data-section="gemini-real">IA e Prompts · 3 CRMs</a>
       </nav>
 
       <div class="sidebar-footer">
@@ -312,9 +312,9 @@
           <h4>Prompt do robô de vendas</h4>
           <label class="avv-check"><input type="checkbox" id="avv-agent"> Agente de IA habilitado</label>
           <label for="avv-prompt">Instruções do sistema para a empresa</label>
-          <textarea class="input prompt-editor" id="avv-prompt" rows="11" maxlength="12000" placeholder="Ex.: Você é o assistente comercial...
+          <textarea class="input prompt-editor" id="avv-prompt" rows="11" placeholder="Ex.: Você é o assistente comercial...
 Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textarea>
-          <div class="avv-editor-footer"><small id="avv-count">0 / 12.000 caracteres</small><button class="btn btn-primary" type="submit">Salvar prompt e agente</button></div>
+          <div class="avv-editor-footer"><small id="avv-count">0 caracteres</small><button class="btn btn-primary" type="submit">Salvar prompt e agente</button></div>
           <small>O n8n deverá carregar esta configuração no fluxo do robô antes de cada atendimento. O salvamento não ativa um chatbot por si só.</small>
         </form>
         <div class="avv-block avv-wallet" id="avv-wallet">
@@ -404,7 +404,7 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
             </div>
           </div>
           <form id="prompt-form">
-            <textarea id="prompt-gemini" class="input prompt-editor" rows="11" maxlength="12000" placeholder="Exemplo: Sempre que o cliente entrar em contato, peça nome e CPF para agilizar o atendimento."></textarea>
+            <textarea id="prompt-gemini" class="input prompt-editor" rows="11" placeholder="Exemplo: Sempre que o cliente entrar em contato, peça nome e CPF para agilizar o atendimento."></textarea>
             <div class="prompt-actions">
               <button id="prompt-save-btn" class="btn btn-primary" type="submit">Salvar prompt</button>
             </div>
@@ -429,6 +429,31 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
    <article class="gemini-module"><h3>CRM Jurídico</h3><p>Faturamento e gastos de empresas jurídicas.</p><span class="gemini-status">Saldo oficial não conectado</span><div class="gemini-links"><a href="https://aistudio.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir recarga oficial ↗</a><button type="button" data-go="ia-empresa">Gerenciar IA</button></div></article>
    <article class="gemini-module"><h3>CRM Vendas 360</h3><p>Projetos Gemini e faturamento por empresa comercial.</p><span class="gemini-status">Saldo oficial não conectado</span><div class="gemini-links"><a href="https://aistudio.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir recarga oficial ↗</a><button type="button" data-go="crm-vendas">Abrir empresas de Vendas</button></div></article>
    <article class="gemini-module"><h3>CRM de Agendamento</h3><p>Projetos Gemini e faturamento dos agentes de agenda.</p><span class="gemini-status">Saldo oficial não conectado</span><div class="gemini-links"><a href="https://aistudio.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir recarga oficial ↗</a><button type="button" data-go="prompts-agenda">Abrir prompts de Agenda</button></div></article>
+  </div>
+  <div class="av-central-v31" id="av-central-v31">
+    <h3>Empresas, prompts e valores — em um só lugar</h3>
+    <p>Selecione o CRM e a empresa. Os prompts são salvos pelos mesmos formulários que já funcionam. Valores só são chamados de saldo quando comprovados pelo provedor.</p>
+    <div class="av-v31-tabs" role="group" aria-label="Selecionar CRM">
+      <button type="button" class="av-v31-tab is-active" data-av31-crm="juridico">Jurídico</button>
+      <button type="button" class="av-v31-tab" data-av31-crm="agenda">Agendamento</button>
+      <button type="button" class="av-v31-tab" data-av31-crm="vendas">Vendas 360</button>
+    </div>
+    <div class="av-v31-fields">
+      <label>Empresa <select id="av31-company" class="input"><option value="">Carregando empresas...</option></select></label>
+      <button type="button" id="av31-refresh" class="btn btn-secondary">Sincronizar empresas</button>
+    </div>
+    <div class="av-v31-finance">
+      <div><small>Gemini · saldo pré-pago oficial</small><strong>Não consultado</strong><span>Pagamento e fonte oficial de saldo pendentes.</span></div>
+      <div id="av31-openai-box"><small>OpenAI · saldo pré-pago oficial</small><strong>Não consultado</strong><span>Não confundir gasto mensal com saldo.</span></div>
+      <div><small>Consumo reportado</small><strong id="av31-spent">Aguardando dados</strong><span id="av31-spent-help">Somente custos oficiais; sem conversão cambial estimada.</span></div>
+    </div>
+    <form id="av31-form">
+      <label for="av31-prompt">Prompt da empresa <small>(sem limite artificial de caracteres no navegador)</small></label>
+      <textarea id="av31-prompt" class="input prompt-editor" rows="13" placeholder="Selecione uma empresa para carregar seu prompt" disabled></textarea>
+      <div class="av-v31-actions"><small id="av31-count">0 caracteres</small><button type="submit" id="av31-save" class="btn btn-primary" disabled>Salvar prompt da empresa</button></div>
+      <p id="av31-status" role="status" aria-live="polite">As empresas são carregadas dos módulos existentes.</p>
+    </form>
+    <p class="av-v31-foot">Os valores de Gemini e OpenAI dependem de fontes oficiais. O painel não cria créditos e não executa pagamentos. Para Vendas, a carteira interna antiga permanece separada e não representa dinheiro no Google.</p>
   </div>
   <div class="gemini-steps"><h3>Ativação por empresa (sem cobrança automática)</h3><ol><li>Vincule um projeto Google Cloud exclusivo à empresa.</li><li>Associe uma conta de faturamento ativa e exclusiva ao projeto, conforme regras do Google.</li><li>Crie a chave no projeto e guarde-a apenas nas credenciais seguras do backend.</li><li>Faça a compra de créditos reais no Google AI Studio e confirme o saldo lá.</li><li>Teste a chamada Gemini pelo backend da empresa e registre consumo por projeto.</li></ol><p>Enquanto as contas de faturamento estiverem encerradas ou com pagamento pendente, a integração permanece em preparação. Este painel não emite pagamentos.</p></div>
  </div>
@@ -455,10 +480,10 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
               <span id="agenda-prompt-last-update">Ainda não atualizado.</span>
             </div>
             <label class="agenda-prompt-field" for="agenda-prompt-text">Prompt personalizado do agente
-              <textarea id="agenda-prompt-text" class="input prompt-editor" rows="12" maxlength="12000" placeholder="Defina instruções de atendimento para esta empresa, sem substituir as regras de segurança, consulta de serviços ou confirmação de horários." disabled></textarea>
+              <textarea id="agenda-prompt-text" class="input prompt-editor" rows="12" placeholder="Defina instruções de atendimento para esta empresa, sem substituir as regras de segurança, consulta de serviços ou confirmação de horários." disabled></textarea>
             </label>
             <div class="agenda-prompt-actions">
-              <span id="agenda-prompt-count" class="agenda-prompt-count">0 / 12.000 caracteres</span>
+              <span id="agenda-prompt-count" class="agenda-prompt-count">0 caracteres</span>
               <button id="agenda-prompt-save-btn" type="submit" class="btn btn-primary" disabled>Salvar prompt da empresa</button>
             </div>
           </form>
@@ -602,5 +627,7 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./js/creditos.js?v=20261013-agenda-admin"></script>
   <script src="./js/vendas-admin.js?v=20261013-carteira-v2" defer></script>
+  <link rel="stylesheet" href="./css/central-v31.css?v=20261014-v31">
+  <script src="./js/central-v31.js?v=20261014-v31" defer></script>
 </body>
 </html>
