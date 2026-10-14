@@ -10,8 +10,36 @@
   <link rel="stylesheet" href="./css/vendas-admin.css?v=20261013-carteira-v2">
   <link rel="stylesheet" href="./css/agenda-prompts.css?v=20261013-agenda-admin">
   <link rel="stylesheet" href="./css/gemini-tres-crms.css?v=20261014">
-  <link rel="stylesheet" href="./css/central-v31.css?v=20261014-v33">
-  <link rel="stylesheet" href="./css/av-visual-v33.css?v=20261014-v33">
+<style id="av-central-styles-v34">
+#av-central-v31{margin:22px 0;padding:22px;border:1px solid #e9ddd5;border-radius:16px;background:#fff}#av-central-v31 h3{margin:0 0 8px}#av-central-v31 p{line-height:1.55} .av-v31-tabs{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}.av-v31-tab{background:#fff;border:1px solid #f26b31;border-radius:9px;padding:10px 16px;color:#c14d1e;cursor:pointer}.av-v31-tab.is-active{background:#f26b31;color:#fff}.av-v31-fields{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.av-v31-fields label{flex:1;min-width:220px}.av-v31-fields select{display:block;width:100%;margin-top:6px}.av-v31-finance{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:18px 0}.av-v31-finance>div{border:1px solid #eadfd8;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px}.av-v31-finance small,.av-v31-finance span{color:#677083}.av-v31-finance strong{font-size:21px;font-weight:500}#av31-form label{display:block;margin:12px 0 8px}#av31-form textarea{display:block;width:100%;min-height:260px;box-sizing:border-box}.av-v31-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px}#av31-status{color:#596274;font-size:14px}.av-v31-foot{font-size:13px;color:#6b7280}@media(max-width:700px){#av-central-v31{padding:14px}.av-v31-actions{flex-wrap:wrap}}
+/* AV V33 · melhoria visual não destrutiva, sem redefinir lógica */
+:root {--av-accent:#f36f36;--av-border:#e5e9f0;--av-ink:#243044;--av-muted:#64748b;}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;text-rendering:optimizeLegibility}
+.nav-link{border-radius:12px;transition:background .18s ease,color .18s ease,transform .18s ease}
+.nav-link:hover{transform:translateX(2px)}
+.panel,.stat-card,.gemini-module{border-radius:17px;box-shadow:0 6px 24px rgba(25,36,55,.035)}
+.btn{border-radius:11px;transition:filter .18s ease,transform .16s ease,box-shadow .18s ease}
+.btn:hover{filter:brightness(.98);transform:translateY(-1px)}
+.input{border-radius:11px;transition:border-color .18s ease,box-shadow .18s ease}
+.input:focus-visible,.btn:focus-visible,.nav-link:focus-visible{outline:2px solid #fb8a52;outline-offset:2px}
+#gemini-real .gemini-grid{gap:16px}
+#av-central-v31{border:1px solid var(--av-border);border-radius:20px;background:linear-gradient(180deg,#fff,#fcfcfd);padding:clamp(16px,2.5vw,30px);box-shadow:0 12px 34px rgba(31,41,55,.05)}
+#av-central-v31 h3{color:var(--av-ink);font-size:clamp(19px,2vw,24px);letter-spacing:-.025em}
+#av-central-v31 p,#av-central-v31 label{color:#526074}
+.av-v31-tab{font:inherit;font-weight:550;border-radius:11px;padding:10px 19px;transition:.18s ease;background:#fff8f4}
+.av-v31-tab:hover{background:#fff0e7}.av-v31-tab.is-active{background:#f36f36;color:white;box-shadow:0 5px 15px rgba(243,111,54,.22)}
+.av-v31-fields{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end}
+.av-v31-fields label{min-width:0;font-size:13px}.av-v31-fields select{height:44px;padding-inline:12px;background:#fff}
+.av-v31-fields .btn{min-height:44px}
+.av-v31-finance>div{border:1px solid var(--av-border);background:white;border-radius:15px;min-height:128px;padding:18px}
+.av-v31-finance small{font-size:12px;line-height:1.4}.av-v31-finance strong{font-size:20px;letter-spacing:-.02em;color:var(--av-ink)}
+#av31-prompt{line-height:1.65;font-size:14px;border:1px solid #dfe5ee;min-height:330px;padding:17px;resize:vertical;background:#fff}
+#av31-prompt:focus{border-color:#f36f36;box-shadow:0 0 0 4px rgba(243,111,54,.09)}
+#av31-status{padding:10px 12px;border-radius:10px;background:#f7f9fc;color:#475569}
+@media(max-width:760px){.av-v31-fields{grid-template-columns:1fr}.av-v31-fields .btn{width:100%}.av-v31-actions{flex-direction:column;align-items:stretch}.av-v31-actions .btn{width:100%}}
+@media(prefers-reduced-motion:reduce){.nav-link,.btn,.input,.av-v31-tab{transition:none!important}}
+
+</style>
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -453,7 +481,7 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
       <label for="av31-prompt">Prompt da empresa <small>(sem limite artificial de caracteres no navegador)</small></label>
       <textarea id="av31-prompt" class="input prompt-editor" rows="13" placeholder="Selecione uma empresa para carregar seu prompt" disabled></textarea>
       <div class="av-v31-actions"><small id="av31-count">0 caracteres</small><button type="submit" id="av31-save" class="btn btn-primary" disabled>Salvar prompt da empresa</button></div>
-      <p id="av31-status" role="status" aria-live="polite">As empresas são carregadas dos módulos existentes.</p>
+      <p id="av31-status" role="status" aria-live="polite">Central carregada. Clique em Sincronizar empresas caso a lista não apareça.</p>
     </form>
     <p class="av-v31-foot">Os valores de Gemini e OpenAI dependem de fontes oficiais. O painel não cria créditos e não executa pagamentos. Para Vendas, a carteira interna antiga permanece separada e não representa dinheiro no Google.</p>
   </div>
@@ -629,6 +657,92 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./js/creditos.js?v=20261013-agenda-admin"></script>
   <script src="./js/vendas-admin.js?v=20261013-carteira-v2" defer></script>
-  <script src="./js/central-v31.js?v=20261014-v33" defer></script>
+<script id="av-central-script-v34">
+/* V31: camada adicional; não remove nem recria os formulários existentes. */
+(() => {
+'use strict';
+const byId=id=>document.getElementById(id);
+const root=byId('av-central-v31');if(!root)return;
+const src={juridico:{section:'ia-empresa',sel:'ia-company-select',prompt:'prompt-gemini',form:'prompt-form'},agenda:{section:'prompts-agenda',sel:'agenda-company-select',prompt:'agenda-prompt-text',form:'agenda-prompt-form'},vendas:{section:'crm-vendas',sel:null,prompt:'avv-prompt',form:'avv-prompt-form'}};
+let current='juridico', pending=false;
+const text=(id,value)=>{const e=byId(id);if(e)e.textContent=value};
+function goto(section){ const el=document.querySelector('.nav-link[data-section="'+section+'"]');el?.click(); }
+function available(){return byId('app')&&!byId('app').classList.contains('hidden');}
+function loadOptions(){
+ const select=byId('av31-company'),old=select.value;select.replaceChildren();
+ if(current==='vendas'){
+  document.querySelectorAll('#avv-list [data-avv-id]').forEach(btn=>{const opt=document.createElement('option');opt.value=btn.dataset.avvId;opt.textContent=btn.querySelector('strong')?.textContent||btn.dataset.avvId;select.append(opt)});
+ }else{ const orig=byId(src[current].sel);for(const node of orig?.options||[]){if(!node.value)continue;select.append(new Option(node.textContent,node.value));}}
+ if(!select.options.length){select.append(new Option('Aguardando empresas do CRM',''));byId('av31-prompt').disabled=true;byId('av31-save').disabled=true;text('av31-status','Empresas ainda não carregadas. Clique em Sincronizar empresas ou abra a aba original.');return;}
+ select.value=[...select.options].some(x=>x.value===old)?old:select.options[0].value;
+ choose();
+}
+function choose(){
+ const company=byId('av31-company').value;
+ if(current==='vendas'){
+  const btn=[...document.querySelectorAll('#avv-list [data-avv-id]')].find(x=>x.dataset.avvId===company);btn?.click();
+ }else {const orig=byId(src[current].sel);if(orig&&company){orig.value=company;orig.dispatchEvent(new Event('change',{bubbles:true}));}}
+ setTimeout(()=>{const original=byId(src[current].prompt),editor=byId('av31-prompt');editor.value=original?.value||'';editor.disabled=!company||Boolean(original?.disabled);byId('av31-save').disabled=editor.disabled;text('av31-count',editor.value.length.toLocaleString('pt-BR')+' caracteres');text('av31-status',editor.disabled?'Selecione uma empresa disponível.':'Prompt carregado. Salvar utiliza a integração original do CRM.');updateFinance()},current==='juridico'?650:120);
+}
+function updateFinance(){
+ const spent=byId('av31-spent'),help=byId('av31-spent-help');
+ if(current==='juridico'){
+  const google=byId('google-spent')?.textContent||'—',openai=byId('openai-spent')?.textContent||'—';
+  spent.textContent='Gemini: '+google+' · OpenAI: '+openai;
+  help.textContent='Gasto mensal exibido na aba IA por Empresa (não é saldo).';
+ }else {spent.textContent='Ainda não integrado';help.textContent='Não há fonte oficial de consumo conectada a este CRM.';}
+ byId('av31-openai-box').hidden=current!=='juridico';
+}
+function activate(crm){current=crm;document.querySelectorAll('[data-av31-crm]').forEach(x=>x.classList.toggle('is-active',x.dataset.av31Crm===crm));loadOptions();syncCompanies();}
+byId('av31-company').addEventListener('change',choose);
+byId('av31-prompt').addEventListener('input',e=>text('av31-count',e.target.value.length.toLocaleString('pt-BR')+' caracteres'));
+byId('av31-form').addEventListener('submit',e=>{e.preventDefault();if(pending)return;const original=byId(src[current].prompt),form=byId(src[current].form);if(!original||!form||byId('av31-prompt').disabled){text('av31-status','Não foi possível acessar o formulário original.');return;}original.value=byId('av31-prompt').value;original.dispatchEvent(new Event('input',{bubbles:true}));pending=true;text('av31-status','Salvamento enviado ao módulo original. Confira a confirmação do painel.');form.requestSubmit();setTimeout(()=>{pending=false;},1800);});
+document.querySelectorAll('[data-av31-crm]').forEach(b=>b.addEventListener('click',()=>activate(b.dataset.av31Crm)));
+let syncSeq = 0;
+function sourceReady(){
+ if(current==='vendas')return !!document.querySelector('#avv-list [data-avv-id]');
+ const e=byId(src[current].sel);
+ return !!(e && [...e.options].some(o=>o.value && !o.disabled && !/carregando|selecione/i.test(o.textContent)));
+}
+function syncCompanies(){
+ const request=++syncSeq, crm=current, button=byId('av31-refresh');
+ button.disabled=true;
+ text('av31-status','Buscando empresas de '+({juridico:'Jurídico',agenda:'Agendamento',vendas:'Vendas 360'}[crm])+'...');
+ if(crm==='vendas')byId('avv-refresh')?.click();
+ else if(crm==='agenda')byId('agenda-prompts-refresh-btn')?.click();
+ else byId('refresh-btn')?.click();
+ let attempts=0;
+ const check=()=>{
+   if(request!==syncSeq)return;
+   if(sourceReady()){
+     button.disabled=false;
+     loadOptions();
+     return;
+   }
+   if(++attempts<20){setTimeout(check,750);return;}
+   button.disabled=false;
+   loadOptions();
+   text('av31-status','Não foi possível encontrar empresas carregadas no módulo '+crm+'. Abra a aba original e verifique se ela lista empresas; depois tente sincronizar novamente.');
+ };
+ setTimeout(check,300);
+}
+byId('av31-refresh').addEventListener('click',syncCompanies);
+const nav=document.querySelector('.nav-link[data-section="gemini-real"]');nav?.addEventListener('click',()=>setTimeout(()=>{loadOptions();if(!sourceReady())syncCompanies();},350));
+// Também inicializa a central quando a tela já está aberta ao recarregar a página.
+setTimeout(()=>{if(location.hash.includes('gemini-real')){loadOptions();if(!sourceReady())syncCompanies();}},700);
+
+// Sincroniza somente quando o seletor de origem realmente mudar.
+let updateTimer;
+function scheduleUpdate(){clearTimeout(updateTimer);updateTimer=setTimeout(()=>{
+ const original=current==='vendas'?byId('avv-list'):byId(src[current].sel);
+ if(original && sourceReady())loadOptions();
+},220)}
+const changes=new MutationObserver(scheduleUpdate);
+['ia-company-select','agenda-company-select','avv-list'].forEach(id=>{const el=byId(id);if(el)changes.observe(el,{childList:true,subtree:true});});
+window.addEventListener('hashchange',()=>{if(location.hash==='#gemini-real')setTimeout(syncCompanies,300)});
+
+// Mantém a V29 íntegra: os módulos originais controlam autenticação, salvamento e API.
+})();
+</script>
 </body>
 </html>
