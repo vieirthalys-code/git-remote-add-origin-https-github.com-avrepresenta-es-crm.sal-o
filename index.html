@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="./css/creditos.css?v=20261005-asaas-primeiro">
   <link rel="stylesheet" href="./css/vendas-admin.css?v=20261013-carteira-v2">
   <link rel="stylesheet" href="./css/agenda-prompts.css?v=20261013-agenda-admin">
+  <link rel="stylesheet" href="./css/gemini-tres-crms.css?v=20261014">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -50,6 +51,7 @@
         <a class="nav-link" href="#crm-vendas" data-section="crm-vendas">CRM Vendas 360 · Meta</a>
         <a class="nav-link" href="#ia-empresa" data-section="ia-empresa">IA por Empresa</a>
         <a class="nav-link" href="#prompts-agenda" data-section="prompts-agenda">Prompts CRM de Agenda</a>
+        <a class="nav-link" href="#gemini-real" data-section="gemini-real">Gemini · 3 CRMs</a>
       </nav>
 
       <div class="sidebar-footer">
@@ -417,6 +419,20 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
       </section>
 
       <!-- Gestão de prompts para o CRM de Agendamento; independente do CRM Jurídico. -->
+<section id="gemini-real" class="section">
+ <div class="panel gemini-central">
+  <p class="eyebrow">FATURAMENTO REAL · GOOGLE AI STUDIO</p>
+  <h2>Central Gemini — Jurídico, Vendas e Agendamento</h2>
+  <p>Gerencie projetos e contas Google de cada empresa, sem confundir créditos internos com dinheiro comprado. As recargas são feitas no Google AI Studio. O saldo pago oficial só pode ser exibido aqui após integração autorizada com uma fonte oficial.</p>
+  <div class="gemini-alert" role="status"><strong>Integração financeira: pendente.</strong> Nenhum botão desta tela compra créditos, consulta saldo oficial ou altera dinheiro. O projeto Gemini principal está em nível gratuito/sem créditos confirmados e o faturamento dos projetos novos ainda precisa ser regularizado.</div>
+  <div class="gemini-grid">
+   <article class="gemini-module"><h3>CRM Jurídico</h3><p>Faturamento e gastos de empresas jurídicas.</p><span class="gemini-status">Saldo oficial não conectado</span><div class="gemini-links"><a href="https://aistudio.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir recarga oficial ↗</a><button type="button" data-go="ia-empresa">Gerenciar IA</button></div></article>
+   <article class="gemini-module"><h3>CRM Vendas 360</h3><p>Projetos Gemini e faturamento por empresa comercial.</p><span class="gemini-status">Saldo oficial não conectado</span><div class="gemini-links"><a href="https://aistudio.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir recarga oficial ↗</a><button type="button" data-go="crm-vendas">Abrir empresas de Vendas</button></div></article>
+   <article class="gemini-module"><h3>CRM de Agendamento</h3><p>Projetos Gemini e faturamento dos agentes de agenda.</p><span class="gemini-status">Saldo oficial não conectado</span><div class="gemini-links"><a href="https://aistudio.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir recarga oficial ↗</a><button type="button" data-go="prompts-agenda">Abrir prompts de Agenda</button></div></article>
+  </div>
+  <div class="gemini-steps"><h3>Ativação por empresa (sem cobrança automática)</h3><ol><li>Vincule um projeto Google Cloud exclusivo à empresa.</li><li>Associe uma conta de faturamento ativa e exclusiva ao projeto, conforme regras do Google.</li><li>Crie a chave no projeto e guarde-a apenas nas credenciais seguras do backend.</li><li>Faça a compra de créditos reais no Google AI Studio e confirme o saldo lá.</li><li>Teste a chamada Gemini pelo backend da empresa e registre consumo por projeto.</li></ol><p>Enquanto as contas de faturamento estiverem encerradas ou com pagamento pendente, a integração permanece em preparação. Este painel não emite pagamentos.</p></div>
+ </div>
+</section>
       <section id="prompts-agenda" class="section">
         <div class="panel">
           <div class="panel-head agenda-prompt-head">
