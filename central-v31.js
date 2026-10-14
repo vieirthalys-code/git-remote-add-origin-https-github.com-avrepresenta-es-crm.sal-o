@@ -33,12 +33,42 @@ function updateFinance(){
  }else {spent.textContent='Ainda não integrado';help.textContent='Não há fonte oficial de consumo conectada a este CRM.';}
  byId('av31-openai-box').hidden=current!=='juridico';
 }
-function activate(crm){current=crm;document.querySelectorAll('[data-av31-crm]').forEach(x=>x.classList.toggle('is-active',x.dataset.av31Crm===crm));text('av31-status','Sincronizando '+crm+'...');loadOptions();}
+function activate(crm){current=crm;document.querySelectorAll('[data-av31-crm]').forEach(x=>x.classList.toggle('is-active',x.dataset.av31Crm===crm));loadOptions();syncCompanies();}
 byId('av31-company').addEventListener('change',choose);
 byId('av31-prompt').addEventListener('input',e=>text('av31-count',e.target.value.length.toLocaleString('pt-BR')+' caracteres'));
 byId('av31-form').addEventListener('submit',e=>{e.preventDefault();if(pending)return;const original=byId(src[current].prompt),form=byId(src[current].form);if(!original||!form||byId('av31-prompt').disabled){text('av31-status','Não foi possível acessar o formulário original.');return;}original.value=byId('av31-prompt').value;original.dispatchEvent(new Event('input',{bubbles:true}));pending=true;text('av31-status','Salvamento enviado ao módulo original. Confira a confirmação do painel.');form.requestSubmit();setTimeout(()=>{pending=false;},1800);});
 document.querySelectorAll('[data-av31-crm]').forEach(b=>b.addEventListener('click',()=>activate(b.dataset.av31Crm)));
-byId('av31-refresh').addEventListener('click',()=>{if(!available())return;if(current==='vendas')byId('avv-refresh')?.click();else if(current==='agenda')byId('agenda-prompts-refresh-btn')?.click();else byId('refresh-btn')?.click();setTimeout(loadOptions,1400)});
-const nav=document.querySelector('.nav-link[data-section="gemini-real"]');nav?.addEventListener('click',()=>setTimeout(loadOptions,250));
+let syncSeq = 0;
+function sourceReady(){
+ if(current==='vendas')return !!document.querySelector('#avv-list [data-avv-id]');
+ const e=byId(src[current].sel);
+ return !!(e && [...e.options].some(o=>o.value && !o.disabled && !/carregando|selecione/i.test(o.textContent)));
+}
+function syncCompanies(){
+ const request=++syncSeq, crm=current, button=byId('av31-refresh');
+ button.disabled=true;
+ text('av31-status','Buscando empresas de '+({juridico:'Jurídico',agenda:'Agendamento',vendas:'Vendas 360'}[crm])+'...');
+ if(crm==='vendas')byId('avv-refresh')?.click();
+ else if(crm==='agenda')byId('agenda-prompts-refresh-btn')?.click();
+ else byId('refresh-btn')?.click();
+ let attempts=0;
+ const check=()=>{
+   if(request!==syncSeq)return;
+   if(sourceReady()){
+     button.disabled=false;
+     loadOptions();
+     return;
+   }
+   if(++attempts<20){setTimeout(check,750);return;}
+   button.disabled=false;
+   loadOptions();
+   text('av31-status','Não foi possível encontrar empresas carregadas no módulo '+crm+'. Abra a aba original e verifique se ela lista empresas; depois tente sincronizar novamente.');
+ };
+ setTimeout(check,300);
+}
+byId('av31-refresh').addEventListener('click',syncCompanies);
+const nav=document.querySelector('.nav-link[data-section="gemini-real"]');nav?.addEventListener('click',()=>setTimeout(()=>{loadOptions();if(!sourceReady())syncCompanies();},350));
+// Também inicializa a central quando a tela já está aberta ao recarregar a página.
+setTimeout(()=>{if(location.hash.includes('gemini-real')){loadOptions();if(!sourceReady())syncCompanies();}},700);
 // Mantém a V29 íntegra: os módulos originais controlam autenticação, salvamento e API.
 })();
