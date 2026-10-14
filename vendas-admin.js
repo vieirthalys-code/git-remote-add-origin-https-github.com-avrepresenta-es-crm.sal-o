@@ -66,7 +66,7 @@
     $('avv-manual').checked = Boolean(c.config?.acesso_manual_ativo);
     $('avv-agent').checked = Boolean(c.config?.agente_ativo);
     $('avv-prompt').value = String(c.config?.prompt_sistema || '');
-    $('avv-count').textContent = `${$('avv-prompt').value.length.toLocaleString('pt-BR')} caracteres`;
+    $('avv-count').textContent = `${$('avv-prompt').value.length.toLocaleString('pt-BR')} / 12.000 caracteres`;
     $('avv-trial-text').textContent = `${isTrial(c) ? 'Teste em andamento' : 'Sem teste ativo'} · ${until(c.config?.teste_gratis_ate)}`;
     $('avv-tags').innerHTML = `<span class="avv-chip ${allowed(c) ? '' : 'off'}">${allowed(c) ? 'Acesso permitido' : 'Acesso bloqueado'}</span><span class="avv-chip ${c.config?.agente_ativo ? '' : 'off'}">Robô ${c.config?.agente_ativo ? 'habilitado' : 'desabilitado'}</span>`;
     $('avv-meta').textContent='Ainda não há conexão oficial com a Meta. A página WhatsApp do CRM Vendas está pronta para receber essa integração.';
@@ -121,7 +121,7 @@
     }catch(e){setCreditStatus(e.message,true);}
     finally{$('avv-topup').disabled=false;}
   });
-  $('avv-prompt').addEventListener('input',()=>{$('avv-count').textContent=`${$('avv-prompt').value.length.toLocaleString('pt-BR')} caracteres`;});
+  $('avv-prompt').addEventListener('input',()=>{$('avv-count').textContent=`${$('avv-prompt').value.length.toLocaleString('pt-BR')} / 12.000 caracteres`;});
   $('avv-save-policy').addEventListener('click',()=>{
     const active=$('avv-gate').checked, manual=$('avv-manual').checked, c=getSelected();
     const ending = active && !manual && !isTrial(c);

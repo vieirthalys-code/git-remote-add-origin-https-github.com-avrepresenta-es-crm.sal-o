@@ -1,0 +1,26 @@
+/* AV V33 · melhoria visual não destrutiva, sem redefinir lógica */
+:root {--av-accent:#f36f36;--av-border:#e5e9f0;--av-ink:#243044;--av-muted:#64748b;}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;text-rendering:optimizeLegibility}
+.nav-link{border-radius:12px;transition:background .18s ease,color .18s ease,transform .18s ease}
+.nav-link:hover{transform:translateX(2px)}
+.panel,.stat-card,.gemini-module{border-radius:17px;box-shadow:0 6px 24px rgba(25,36,55,.035)}
+.btn{border-radius:11px;transition:filter .18s ease,transform .16s ease,box-shadow .18s ease}
+.btn:hover{filter:brightness(.98);transform:translateY(-1px)}
+.input{border-radius:11px;transition:border-color .18s ease,box-shadow .18s ease}
+.input:focus-visible,.btn:focus-visible,.nav-link:focus-visible{outline:2px solid #fb8a52;outline-offset:2px}
+#gemini-real .gemini-grid{gap:16px}
+#av-central-v31{border:1px solid var(--av-border);border-radius:20px;background:linear-gradient(180deg,#fff,#fcfcfd);padding:clamp(16px,2.5vw,30px);box-shadow:0 12px 34px rgba(31,41,55,.05)}
+#av-central-v31 h3{color:var(--av-ink);font-size:clamp(19px,2vw,24px);letter-spacing:-.025em}
+#av-central-v31 p,#av-central-v31 label{color:#526074}
+.av-v31-tab{font:inherit;font-weight:550;border-radius:11px;padding:10px 19px;transition:.18s ease;background:#fff8f4}
+.av-v31-tab:hover{background:#fff0e7}.av-v31-tab.is-active{background:#f36f36;color:white;box-shadow:0 5px 15px rgba(243,111,54,.22)}
+.av-v31-fields{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end}
+.av-v31-fields label{min-width:0;font-size:13px}.av-v31-fields select{height:44px;padding-inline:12px;background:#fff}
+.av-v31-fields .btn{min-height:44px}
+.av-v31-finance>div{border:1px solid var(--av-border);background:white;border-radius:15px;min-height:128px;padding:18px}
+.av-v31-finance small{font-size:12px;line-height:1.4}.av-v31-finance strong{font-size:20px;letter-spacing:-.02em;color:var(--av-ink)}
+#av31-prompt{line-height:1.65;font-size:14px;border:1px solid #dfe5ee;min-height:330px;padding:17px;resize:vertical;background:#fff}
+#av31-prompt:focus{border-color:#f36f36;box-shadow:0 0 0 4px rgba(243,111,54,.09)}
+#av31-status{padding:10px 12px;border-radius:10px;background:#f7f9fc;color:#475569}
+@media(max-width:760px){.av-v31-fields{grid-template-columns:1fr}.av-v31-fields .btn{width:100%}.av-v31-actions{flex-direction:column;align-items:stretch}.av-v31-actions .btn{width:100%}}
+@media(prefers-reduced-motion:reduce){.nav-link,.btn,.input,.av-v31-tab{transition:none!important}}

@@ -13,7 +13,7 @@ function loadOptions(){
  if(current==='vendas'){
   document.querySelectorAll('#avv-list [data-avv-id]').forEach(btn=>{const opt=document.createElement('option');opt.value=btn.dataset.avvId;opt.textContent=btn.querySelector('strong')?.textContent||btn.dataset.avvId;select.append(opt)});
  }else{ const orig=byId(src[current].sel);for(const node of orig?.options||[]){if(!node.value)continue;select.append(new Option(node.textContent,node.value));}}
- if(!select.options.length){select.append(new Option('Abra o módulo original para carregar empresas',''));byId('av31-prompt').disabled=true;byId('av31-save').disabled=true;text('av31-status','Empresas ainda não carregadas. Clique em Sincronizar empresas ou abra a aba original.');return;}
+ if(!select.options.length){select.append(new Option('Aguardando empresas do CRM',''));byId('av31-prompt').disabled=true;byId('av31-save').disabled=true;text('av31-status','Empresas ainda não carregadas. Clique em Sincronizar empresas ou abra a aba original.');return;}
  select.value=[...select.options].some(x=>x.value===old)?old:select.options[0].value;
  choose();
 }
@@ -70,5 +70,16 @@ byId('av31-refresh').addEventListener('click',syncCompanies);
 const nav=document.querySelector('.nav-link[data-section="gemini-real"]');nav?.addEventListener('click',()=>setTimeout(()=>{loadOptions();if(!sourceReady())syncCompanies();},350));
 // Também inicializa a central quando a tela já está aberta ao recarregar a página.
 setTimeout(()=>{if(location.hash.includes('gemini-real')){loadOptions();if(!sourceReady())syncCompanies();}},700);
+
+// Sincroniza somente quando o seletor de origem realmente mudar.
+let updateTimer;
+function scheduleUpdate(){clearTimeout(updateTimer);updateTimer=setTimeout(()=>{
+ const original=current==='vendas'?byId('avv-list'):byId(src[current].sel);
+ if(original && sourceReady())loadOptions();
+},220)}
+const changes=new MutationObserver(scheduleUpdate);
+['ia-company-select','agenda-company-select','avv-list'].forEach(id=>{const el=byId(id);if(el)changes.observe(el,{childList:true,subtree:true});});
+window.addEventListener('hashchange',()=>{if(location.hash==='#gemini-real')setTimeout(syncCompanies,300)});
+
 // Mantém a V29 íntegra: os módulos originais controlam autenticação, salvamento e API.
 })();
