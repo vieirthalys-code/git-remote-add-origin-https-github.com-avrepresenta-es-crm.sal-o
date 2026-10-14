@@ -10,8 +10,38 @@
   <link rel="stylesheet" href="./css/vendas-admin.css?v=20261013-carteira-v2">
   <link rel="stylesheet" href="./css/agenda-prompts.css?v=20261013-agenda-admin">
   <link rel="stylesheet" href="./css/gemini-tres-crms.css?v=20261014">
-  <link rel="stylesheet" href="./css/central-v31.css?v=20261014-v33">
-  <link rel="stylesheet" href="./css/av-visual-v33.css?v=20261014-v33">
+
+
+<style id="av-central-isolado-v35">
+/* Central isolada. As demais páginas preservam suas regras originais. */
+#av-central-v31 {margin:22px 0; padding:clamp(16px,2.5vw,26px); background:#fff; border:1px solid #e7e9ed; border-radius:18px; box-shadow:0 8px 30px rgba(25,38,55,.045)}
+#av-central-v31 * {box-sizing:border-box}
+#av-central-v31 h3 {font-size:21px; letter-spacing:-.025em; margin:0 0 7px; color:#222833}
+#av-central-v31 > p {color:#647084; line-height:1.55}
+#av-central-v31 .av-v31-tabs {display:flex; flex-wrap:wrap; gap:8px; margin:18px 0 15px}
+#av-central-v31 .av-v31-tab {font:inherit; padding:10px 16px; background:#fff; border:1px solid #edc9b8; border-radius:11px; color:#ba4d1b; cursor:pointer}
+#av-central-v31 .av-v31-tab.is-active {background:#f26b31; color:#fff; border-color:#f26b31}
+#av-central-v31 .av-v31-fields {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
+#av-central-v31 .av-v31-fields label {font-size:13px; color:#475569; display:block}
+#av-central-v31 .av-v31-fields select {height:44px; width:100%; display:block; margin-top:5px; background:#fff; border-radius:10px}
+#av-central-v31 .av-v31-fields button {min-height:44px}
+#av-central-v31 .av-v31-finance {display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:12px;margin:18px 0}
+#av-central-v31 .av-v31-finance>div {border:1px solid #e9eaf0; border-radius:13px; padding:16px; display:flex;flex-direction:column;gap:7px; background:#fdfdfe}
+#av-central-v31 .av-v31-finance small {font-size:12px; color:#596779}
+#av-central-v31 .av-v31-finance strong {font-size:19px; font-weight:600; color:#263244;overflow-wrap:anywhere}
+#av-central-v31 .av-v31-finance span {font-size:12px;color:#667588;line-height:1.4}
+#av-central-v31 #av31-openai-box[hidden] {display:none!important}
+#av-central-v31 #av31-form label {display:block; font-size:13px; color:#526071; margin-bottom:7px}
+#av-central-v31 textarea {display:block; min-height:290px; width:100%; padding:14px; font-size:14px; line-height:1.6; border-radius:12px; resize:vertical; background:white}
+#av-central-v31 textarea:focus-visible,#av-central-v31 select:focus-visible,#av-central-v31 button:focus-visible {outline:2px solid #f26b31;outline-offset:2px}
+#av-central-v31 .av-v31-actions {display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+#av-central-v31 #av31-count {font-size:12px;color:#64748b}
+#av-central-v31 #av31-status {margin:14px 0 0; padding:12px 14px; border:1px solid #e7eaf0; background:#f8fafc; color:#344256;border-radius:11px;font-size:13px;line-height:1.5}
+#av-central-v31 #av31-status[data-tone="error"] {color:#9f2222;background:#fff4f4;border-color:#f4c5c5}
+#av-central-v31 #av31-status[data-tone="success"] {color:#256344;background:#f0fbf5;border-color:#b7dfcc}
+#av-central-v31 .av-v31-foot {margin-top:20px;font-size:12px;color:#667588;line-height:1.6}
+@media(max-width:700px){#av-central-v31 .av-v31-fields{grid-template-columns:1fr}#av-central-v31 .av-v31-actions{align-items:stretch;flex-direction:column}#av-central-v31 .av-v31-actions button{width:100%}}
+</style>
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -453,7 +483,7 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
       <label for="av31-prompt">Prompt da empresa <small>(sem limite artificial de caracteres no navegador)</small></label>
       <textarea id="av31-prompt" class="input prompt-editor" rows="13" placeholder="Selecione uma empresa para carregar seu prompt" disabled></textarea>
       <div class="av-v31-actions"><small id="av31-count">0 caracteres</small><button type="submit" id="av31-save" class="btn btn-primary" disabled>Salvar prompt da empresa</button></div>
-      <p id="av31-status" role="status" aria-live="polite">As empresas são carregadas dos módulos existentes.</p>
+      <p id="av31-status" role="status" aria-live="polite">Escolha um CRM para consultar as empresas diretamente pelo servidor.</p>
     </form>
     <p class="av-v31-foot">Os valores de Gemini e OpenAI dependem de fontes oficiais. O painel não cria créditos e não executa pagamentos. Para Vendas, a carteira interna antiga permanece separada e não representa dinheiro no Google.</p>
   </div>
@@ -629,6 +659,189 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./js/creditos.js?v=20261013-agenda-admin"></script>
   <script src="./js/vendas-admin.js?v=20261013-carteira-v2" defer></script>
-  <script src="./js/central-v31.js?v=20261014-v33" defer></script>
+
+
+<script id="av-central-isolado-v35">
+/* AV Central V35: consulta APIs originais; NUNCA dispara eventos de seleção dos outros módulos. */
+(() => {
+  'use strict';
+  const el = id => document.getElementById(id);
+  const root = el('av-central-v31');
+  if (!root || root.dataset.avV35Ready) return;
+  root.dataset.avV35Ready = '1';
+  const labels = {juridico:'Jurídico',agenda:'Agendamento',vendas:'Vendas 360'};
+  const URLs = {
+    admin:'https://possessivebull-n8n.cloudfy.live/webhook/crm-juridico/admin',
+    ia:'https://possessivebull-n8n.cloudfy.live/webhook/crm-juridico/ia-admin'
+  };
+  const state = {crm:'juridico',seq:0, saving:false,dirty:false,companies:[],cache:{juridico:null,agenda:null,vendas:null}};
+  const input = el('av31-prompt'), choice = el('av31-company'), btn = el('av31-refresh'), saveBtn=el('av31-save');
+  const status = (message,tone='info') => {const e=el('av31-status'); e.textContent=message; e.dataset.tone=tone;};
+  const errorMessage = e => String(e?.message || 'Falha desconhecida.');
+  const number = v => new Intl.NumberFormat('pt-BR').format(v);
+  const renderCount = () => {el('av31-count').textContent=number(input.value.length)+' caracteres';};
+  async function token() {
+    const t=await window.AV_ADMIN_AUTH?.getToken?.();
+    if (!t) throw new Error('Faça login no Painel Admin AV para consultar as empresas.');
+    return t;
+  }
+  async function request(url,data,withBearer=false) {
+    const access=await token();
+    const response=await fetch(url,{
+      method:'POST',cache:'no-store',
+      headers:{'Content-Type':'application/json','Accept':'application/json',...(withBearer?{'Authorization':'Bearer '+access}:{})},
+      body:JSON.stringify({...data,access_token:access})
+    });
+    const raw=await response.text();
+    let out;
+    try {out=JSON.parse(raw);} catch {throw new Error('O servidor retornou conteúdo inválido (HTTP '+response.status+').');}
+    if (!response.ok || out?.ok===false) throw new Error(out?.erro||out?.error||out?.message||'HTTP '+response.status);
+    return out;
+  }
+  const admin=(path,args={})=>request(URLs.admin+'/'+path,args);
+  const ia=(path,args={})=>request(URLs.ia+'/'+path,args,true);
+  async function vendas(acao,params={}) {
+    const access=await token();
+    const response=await fetch('/api/vendas/admin',{
+      method:'POST',cache:'no-store',headers:{'Authorization':'Bearer '+access,'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({acao,...params})
+    });
+    const payload=await response.json().catch(()=>null);
+    if (!response.ok||payload?.ok===false||!payload) throw new Error(payload?.error||payload?.message||'Falha na API Vendas (HTTP '+response.status+').');
+    return payload;
+  }
+  function normalizePrompts(data) {
+    const result=new Map();
+    function scan(value,depth=0) {
+      if (!value||depth>12) return;
+      if (Array.isArray(value)) {value.forEach(v=>scan(v,depth+1));return;}
+      if (typeof value!=='object')return;
+      const id=value.empresa_id??value.id_empresa??value.empresa?.id;
+      const provider=String(value.provedor??value.provider??'').toUpperCase();
+      if (id!=null && provider==='GEMINI') result.set(String(id),String(value.prompt_sistema??value.prompt??''));
+      if (id!=null&&value.gemini)result.set(String(id),String(value.gemini.prompt_sistema??value.gemini.prompt??''));
+      for(const k of ['provedores','providers','ias','configuracoes','dados','data','empresas','resultados','rows'])if(value[k]&&value[k]!==value)scan(value[k],depth+1);
+    }
+    scan(data);
+    return result;
+  }
+  async function loadCrm(crm) {
+    if(crm==='juridico'){
+      const [companies, prompts] = await Promise.all([admin('empresas',{}),ia('listar',{})]);
+      if(!Array.isArray(companies?.empresas))throw new Error('A API Jurídico não enviou a lista de empresas.');
+      const byCompany=normalizePrompts(prompts);
+      return companies.empresas.map(row=>({id:String(row.empresa_id),name:String(row.empresa_nome||row.nome||'Empresa'),prompt:byCompany.get(String(row.empresa_id))??'',raw:row})).filter(x=>x.id&&x.id!=='undefined');
+    }
+    if(crm==='agenda'){
+      const data=await admin('agenda-prompts/listar',{});
+      if(!Array.isArray(data?.empresas))throw new Error('A API Agenda não enviou a lista de empresas.');
+      return data.empresas.map(row=>({id:String(row.empresa_id??''),name:String(row.empresa_nome??row.nome??'Empresa'),prompt:String(row.prompt_sistema??''),raw:row})).filter(x=>x.id);
+    }
+    const data=await vendas('listar');
+    if(!Array.isArray(data?.empresas))throw new Error('A API Vendas não enviou a lista de empresas.');
+    return data.empresas.map(row=>({id:String(row.id??''),name:String(row.nome??'Empresa'),prompt:String(row.config?.prompt_sistema??''),raw:row})).filter(x=>x.id);
+  }
+  function setEditor(enabled) {input.disabled=!enabled;saveBtn.disabled=!enabled;}
+  function renderCompanies() {
+    const old=choice.value;
+    choice.replaceChildren();
+    const rows=state.companies;
+    if(!rows.length) {
+      choice.add(new Option('Nenhuma empresa encontrada',''));
+      input.value='';setEditor(false);renderCount();return;
+    }
+    for(const x of rows)choice.add(new Option(x.name+' · '+x.id,x.id));
+    choice.value=rows.some(x=>x.id===old)?old:rows[0].id;
+    renderCompany();
+  }
+  function renderCompany() {
+    const company=state.companies.find(x=>x.id===choice.value);
+    input.value=company?.prompt??'';
+    setEditor(Boolean(company));state.dirty=false;state.lastSelected=choice.value;renderCount();
+    if(company)status('Prompt de '+company.name+' carregado. O salvamento será feito exclusivamente nessa empresa.');
+    else status('Não há empresa selecionada.');
+    renderFinance();
+  }
+  async function renderFinance() {
+    el('av31-openai-box').hidden=state.crm!=='juridico';
+    const spent=el('av31-spent'), help=el('av31-spent-help');
+    if(state.crm!=='juridico'){
+      spent.textContent='Não disponível';help.textContent='Consumo oficial ainda não integrado para este CRM. Os valores internos não são saldo pago.';
+      return;
+    }
+    const selected=choice.value, seq=state.seq;
+    spent.textContent='Consultando gastos oficiais...';help.textContent='Gasto mensal, não saldo pré-pago.';
+    try {
+      const access=await token();
+      const res=await fetch('/api/billing/summary?empresa_id='+encodeURIComponent(selected),{
+        cache:'no-store',headers:{'Accept':'application/json','Authorization':'Bearer '+access}
+      });
+      const data=await res.json().catch(()=>null);
+      if(state.seq!==seq||state.crm!=='juridico'||choice.value!==selected)return;
+      if(!res.ok||!data?.providers)throw new Error(data?.message||'Financeiro indisponível');
+      function format(v){if(v?.ok!==true||v.spent==null)return 'Indisponível';const amount=Number(v.spent);if(!Number.isFinite(amount))return 'Indisponível';try{return new Intl.NumberFormat('pt-BR',{style:'currency',currency:v.currency||'USD'}).format(amount);}catch{return String(amount)+' '+String(v.currency||'');}}
+      spent.textContent='Gemini: '+format(data.providers.google)+' · OpenAI: '+format(data.providers.openai);
+      help.textContent='Gastos mensais informados pelos provedores. Nenhum valor desta tela equivale a saldo pré-pago.';
+    } catch(e) {if(state.seq!==seq||state.crm!=='juridico'||choice.value!==selected)return;spent.textContent='Indisponível';help.textContent='Não foi possível consultar gastos oficiais: '+errorMessage(e);}
+  }
+  function allowDiscard() {return !state.dirty||confirm('O prompt foi editado e ainda não foi salvo. Descartar as alterações?');}
+  async function reload({force=true}={}) {
+    if(!allowDiscard())return;
+    const crm=state.crm, seq=++state.seq;
+    btn.disabled=true;choice.disabled=true;setEditor(false);
+    status('Consultando empresas do CRM '+labels[crm]+'...');
+    if(force)state.cache[crm]=null;
+    try{
+      const records=state.cache[crm]??await loadCrm(crm);
+      if(seq!==state.seq)return;
+      state.cache[crm]=records;state.companies=records;
+      renderCompanies();status(records.length?records.length+' empresa(s) carregada(s) no CRM '+labels[crm]+'. Selecione a empresa para editar o prompt.':'Nenhuma empresa cadastrada no CRM '+labels[crm]+'.',records.length?'success':'info');
+    }catch(e){if(seq!==state.seq)return;state.companies=[];renderCompanies();status('Não foi possível carregar '+labels[crm]+': '+errorMessage(e),'error');}
+    finally {if(seq===state.seq){btn.disabled=false;choice.disabled=false;}}
+  }
+  function changeCrm(crm) {
+    if(crm===state.crm)return;
+    if(!allowDiscard())return;
+    state.crm=crm;
+    for(const button of root.querySelectorAll('[data-av31-crm]')){
+      const active=button.dataset.av31Crm===crm;
+      button.classList.toggle('is-active',active);
+      button.setAttribute('aria-pressed',String(active));
+    }
+    input.value='';state.dirty=false;renderCount();
+    reload({force:false});
+  }
+  async function savePrompt(e) {
+    e.preventDefault();
+    if(state.saving||input.disabled)return;
+    const crm=state.crm, id=choice.value, row=state.companies.find(x=>x.id===id);
+    if(!row) {status('Selecione uma empresa antes de salvar.','error');return;}
+    const prompt=input.value;
+    if(!confirm('Salvar o prompt de '+row.name+' no CRM '+labels[crm]+'?'))return;
+    state.saving=true;saveBtn.disabled=true;choice.disabled=true;btn.disabled=true;
+    status('Salvando o prompt de '+row.name+'...');
+    try{
+      let result;
+      if(crm==='juridico') result=await ia('configuracao',{empresa_id:Number(id),provedor:'GEMINI',prompt_sistema:prompt.trim()});
+      else if(crm==='agenda')result=await admin('agenda-prompts/salvar',{empresa_id:id,prompt_sistema:prompt.trim()});
+      else result=await vendas('prompt',{empresa_id:id,prompt_sistema:prompt,agente_ativo:Boolean(row.raw?.config?.agente_ativo)});
+      if(result?.ok===false)throw new Error(result?.error||result?.erro||'Erro de gravação');
+      row.prompt=String(result?.prompt_sistema??prompt.trim());
+      if(row.raw?.config)row.raw.config.prompt_sistema=row.prompt;
+      state.dirty=false;input.value=row.prompt;renderCount();
+      status('Prompt salvo com confirmação da API para '+row.name+'.','success');
+    }catch(e){status('O prompt NÃO foi confirmado pelo servidor: '+errorMessage(e),'error');}
+    finally{state.saving=false;choice.disabled=false;btn.disabled=false;saveBtn.disabled=false;}
+  }
+  root.querySelectorAll('[data-av31-crm]').forEach(button=>button.addEventListener('click',()=>changeCrm(button.dataset.av31Crm)));
+  choice.addEventListener('change',()=>{if(allowDiscard())renderCompany(); else {choice.value=state.lastSelected??choice.value;}});
+  input.addEventListener('input',()=>{state.dirty=true;renderCount();});
+  btn.addEventListener('click',()=>reload({force:true}));
+  el('av31-form').addEventListener('submit',savePrompt);
+  const nav=document.querySelector('.nav-link[data-section="gemini-real"]');
+  nav?.addEventListener('click',()=>{if(!state.companies.length){setTimeout(()=>reload({force:false}),50);}});
+  if(location.hash==='#gemini-real')setTimeout(()=>reload({force:false}),300);
+})();
+</script>
 </body>
 </html>
