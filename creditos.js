@@ -912,6 +912,7 @@
     if (!agendaPromptLoaded || !company) { toast('Selecione uma empresa válida do CRM de Agenda.',true); return; }
     const editor = $('#agenda-prompt-text');
     const prompt = editor.value.trim();
+    // Sem limite artificial no navegador; o backend valida os limites operacionais.
     const saveButton = $('#agenda-prompt-save-btn');
     const selector = $('#agenda-company-select');
     saveButton.disabled = true;

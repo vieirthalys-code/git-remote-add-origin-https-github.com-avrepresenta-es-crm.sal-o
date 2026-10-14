@@ -21,7 +21,7 @@ function choose(){
  const company=byId('av31-company').value;
  if(current==='vendas'){
   const btn=[...document.querySelectorAll('#avv-list [data-avv-id]')].find(x=>x.dataset.avvId===company);btn?.click();
- }else {const orig=byId(src[current].sel);if(orig&&company){orig.value=company;orig.dispatchEvent(new Event('change',{bubbles:true}));if(current==='juridico')setTimeout(()=>document.querySelector('.nav-link[data-section="gemini-real"]')?.click(),30);}}
+ }else {const orig=byId(src[current].sel);if(orig&&company){orig.value=company;orig.dispatchEvent(new Event('change',{bubbles:true}));}}
  setTimeout(()=>{const original=byId(src[current].prompt),editor=byId('av31-prompt');editor.value=original?.value||'';editor.disabled=!company||Boolean(original?.disabled);byId('av31-save').disabled=editor.disabled;text('av31-count',editor.value.length.toLocaleString('pt-BR')+' caracteres');text('av31-status',editor.disabled?'Selecione uma empresa disponível.':'Prompt carregado. Salvar utiliza a integração original do CRM.');updateFinance()},current==='juridico'?650:120);
 }
 function updateFinance(){
