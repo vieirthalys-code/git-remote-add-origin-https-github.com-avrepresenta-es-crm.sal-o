@@ -3,9 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f97316">
+  <meta name="theme-color" content="#ea6831">
   <title>Admin SaaS | AV Representações & Tecnologia</title>
-  <link rel="stylesheet" href="./css/creditos.css">
+  <link rel="icon" type="image/png" href="./assets/av-logo.png?v=20261005-contratos">
+  <link rel="stylesheet" href="./css/creditos.css?v=20261005-asaas-primeiro">
+  <link rel="stylesheet" href="./css/vendas-admin.css?v=20261013-carteira-v2">
+  <link rel="stylesheet" href="./css/agenda-prompts.css?v=20261013-agenda-admin">
+  <link rel="stylesheet" href="./css/gemini-tres-crms.css?v=20261014">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -13,11 +17,8 @@
   <section id="auth-screen" class="auth-screen">
     <div class="auth-card">
       <div class="brand auth-brand">
-        <div class="brand-mark">AV</div>
-        <div>
-          <strong>Admin SaaS</strong>
-          <span>Controle do CRM Jurídico e IA</span>
-        </div>
+        <img class="brand-logo brand-logo-auth" src="./assets/av-logo.png?v=20261005-contratos" alt="AV Representações">
+        <div class="auth-brand-copy"><strong>Admin SaaS</strong><span>Controle do CRM Jurídico e IA</span></div>
       </div>
       <p class="eyebrow">ACESSO ADMINISTRATIVO</p>
       <h1>Entrar no Admin SaaS</h1>
@@ -37,21 +38,20 @@
 
   <div id="app" class="app hidden">
     <aside class="sidebar" id="sidebar">
-      <div class="brand">
-        <div class="brand-mark">AV</div>
-        <div>
-          <strong>Admin SaaS</strong>
-          <span>CRM Jurídico + IA</span>
-        </div>
+      <div class="brand sidebar-brand">
+        <img class="brand-logo brand-logo-sidebar" src="./assets/av-logo.png?v=20261005-contratos" alt="AV Representações">
+        <div class="sidebar-brand-copy"><strong>Admin SaaS</strong><span>CRM Jurídico + IA</span></div>
       </div>
 
       <nav class="nav">
         <a class="nav-link active" href="#visao-geral" data-section="visao-geral">Visão geral</a>
         <a class="nav-link" href="#empresas" data-section="empresas">Empresas</a>
+        <a class="nav-link" href="#contratos" data-section="contratos">Contratos & Planos</a>
         <a class="nav-link" href="#crm-juridico" data-section="crm-juridico">CRM Jurídico</a>
-        <a class="nav-link" href="#creditos" data-section="creditos">Créditos de IA</a>
-        <a class="nav-link" href="#financeiro-api" data-section="financeiro-api">Financeiro das APIs</a>
-        <a class="nav-link" href="#historico" data-section="historico">Histórico</a>
+        <a class="nav-link" href="#crm-vendas" data-section="crm-vendas">CRM Vendas 360 · Meta</a>
+        <a class="nav-link" href="#ia-empresa" data-section="ia-empresa">IA por Empresa</a>
+        <a class="nav-link" href="#prompts-agenda" data-section="prompts-agenda">Prompts CRM de Agenda</a>
+        <a class="nav-link" href="#gemini-real" data-section="gemini-real">Gemini · 3 CRMs</a>
       </nav>
 
       <div class="sidebar-footer">
@@ -59,28 +59,25 @@
         <button id="logout-btn" class="btn btn-ghost">Sair</button>
       </div>
     </aside>
+    <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Fechar menu"></button>
 
     <main class="main">
       <header class="topbar">
         <button id="menu-btn" class="icon-btn mobile-only" aria-label="Abrir menu">☰</button>
-        <div>
-          <p class="eyebrow">ADMINISTRAÇÃO</p>
-          <h1 id="page-title">Visão geral</h1>
-        </div>
+        <div><p class="eyebrow">ADMINISTRAÇÃO</p><h1 id="page-title">Visão geral</h1></div>
         <button id="refresh-btn" class="btn btn-secondary">Atualizar</button>
       </header>
 
       <section id="visao-geral" class="section active">
-        <div class="stats-grid">
+        <div class="stats-grid simple-stats">
           <article class="stat-card"><span>Empresas</span><strong id="stat-empresas">0</strong></article>
-          <article class="stat-card"><span>Saldo IA disponível</span><strong id="stat-saldo">R$ 0,00</strong></article>
-          <article class="stat-card"><span>Consumo de IA</span><strong id="stat-consumidos">R$ 0,00</strong></article>
-          <article class="stat-card"><span>Agentes ativos</span><strong id="stat-agentes">0</strong></article>
+          <article class="stat-card"><span>Prompts Gemini configurados</span><strong id="stat-prompts">0</strong></article>
+          <article class="stat-card"><span>Testes grátis ativos</span><strong id="stat-trials">0</strong></article>
         </div>
 
         <div class="panel">
           <div class="panel-head">
-            <div><h2>Empresas do CRM Jurídico</h2><p>Visão administrativa por <code>empresa_id</code>.</p></div>
+            <div><h2>Empresas do CRM Jurídico</h2><p>Selecione uma empresa para consultar o CRM ou configurar IA real.</p></div>
             <button class="btn btn-primary" data-go="empresas">Gerenciar empresas</button>
           </div>
           <div id="overview-companies" class="overview-company-grid"></div>
@@ -88,7 +85,7 @@
 
         <div class="panel crm-overview-panel">
           <div class="panel-head">
-            <div><h2>Dados do CRM</h2><p>Selecione uma empresa para consultar clientes, processos, documentos, agenda, notificações, usuários e IA.</p></div>
+            <div><h2>Dados do CRM</h2><p>Selecione uma empresa para consultar os dados do CRM.</p></div>
             <select id="overview-company-select" class="input compact-select"></select>
           </div>
           <div id="overview-company-details" class="detail-grid"></div>
@@ -96,15 +93,155 @@
       </section>
 
       <section id="empresas" class="section">
+        <div class="panel access-panel">
+          <div class="panel-head access-panel-head">
+            <div>
+              <p class="eyebrow">ACESSO DO CLIENTE</p>
+              <h2>Teste grátis e liberação manual</h2>
+              <p>Libere uma empresa por alguns dias sem alterar cobrança, contrato ou Asaas. Ao terminar a data, o login volta automaticamente para a regra normal de pagamento.</p>
+            </div>
+            <button id="access-refresh-btn" class="btn btn-secondary" type="button">Atualizar acessos</button>
+          </div>
+          <div class="access-kpis">
+            <div class="access-kpi"><span>Contas SaaS</span><strong id="access-total">0</strong></div>
+            <div class="access-kpi"><span>Em teste agora</span><strong id="access-active">0</strong></div>
+            <div class="access-kpi"><span>Sem teste ativo</span><strong id="access-inactive">0</strong></div>
+          </div>
+          <div id="access-companies" class="access-company-grid">
+            <div class="access-loading">
+              <span class="skeleton skeleton-line wide"></span>
+              <span class="skeleton skeleton-line"></span>
+              <span class="skeleton skeleton-line short"></span>
+            </div>
+          </div>
+        </div>
+
         <div class="panel">
           <div class="panel-head">
-            <div><h2>Empresas</h2><p>Empresas cadastradas no CRM Jurídico e respectivos créditos de IA.</p></div>
+            <div><h2>Empresas</h2><p>Empresas cadastradas no CRM Jurídico.</p></div>
             <input id="empresa-search" class="input search" type="search" placeholder="Pesquisar empresa...">
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Empresa</th><th>ID</th><th>Status</th><th>Saldo IA (R$)</th><th>Consumido (R$)</th><th>Saldo ativo</th><th>Agente</th><th>Ações</th></tr></thead>
-              <tbody id="empresas-body"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody>
+              <thead><tr><th>Empresa</th><th>ID</th><th>Status</th><th>Prompt Gemini</th><th>Ações</th></tr></thead>
+              <tbody id="empresas-body"><tr><td colspan="5" class="empty">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <section id="contratos" class="section">
+        <div class="stats-grid contract-stats">
+          <article class="stat-card"><span>Contratos</span><strong id="contract-stat-total">0</strong></article>
+          <article class="stat-card"><span>Acesso liberado</span><strong id="contract-stat-access">0</strong></article>
+          <article class="stat-card"><span>Aguardando pagamento</span><strong id="contract-stat-waiting">0</strong></article>
+          <article class="stat-card"><span>Bloqueados</span><strong id="contract-stat-blocked">0</strong></article>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head contracts-head">
+            <div>
+              <p class="eyebrow">PRODUTOS SAAS</p>
+              <h2>Planos disponíveis</h2>
+              <p>Produtos ativos cadastrados no controle central da AV Tecnologias.</p>
+            </div>
+            <button id="contracts-refresh-btn" class="btn btn-secondary" type="button">Atualizar contratos</button>
+          </div>
+          <div id="contract-products-grid" class="contract-products-grid">
+            <div class="empty">Carregando produtos...</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head contracts-list-head">
+            <div>
+              <p class="eyebrow">ASSINATURAS DO ASAAS</p>
+              <h2>Buscar e importar do Asaas</h2>
+              <p>Cadastre a cobrança primeiro no Asaas. Depois escolha aqui qual empresa e produto da AV essa assinatura deve liberar.</p>
+            </div>
+            <div class="contract-head-actions">
+              <input id="asaas-subscription-search" class="input search" type="search" placeholder="Pesquisar cliente, descrição ou status...">
+              <button id="asaas-refresh-btn" class="btn btn-secondary" type="button">Atualizar Asaas</button>
+            </div>
+          </div>
+          <div class="table-wrap contract-table-wrap">
+            <table class="contract-table asaas-subscription-table">
+              <thead>
+                <tr>
+                  <th>Cliente Asaas</th>
+                  <th>Descrição</th>
+                  <th>Valor</th>
+                  <th>Pagamento</th>
+                  <th>Vencimento</th>
+                  <th>Status</th>
+                  <th>Vínculo</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="asaas-subscriptions-body"><tr><td colspan="8" class="empty">Clique em “Atualizar Asaas” para consultar as assinaturas.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel contract-create-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">VINCULAR AO SAAS</p>
+              <h2>Importar assinatura selecionada</h2>
+              <p>Valor, forma de pagamento e vencimento vêm diretamente do Asaas. Aqui você define apenas qual empresa e qual produto serão liberados.</p>
+            </div>
+          </div>
+          <div id="asaas-selected-summary" class="asaas-selected-summary">
+            <span>Nenhuma assinatura selecionada.</span>
+            <strong>Escolha “Vincular” em uma assinatura acima.</strong>
+          </div>
+          <form id="contract-form" class="contract-form-grid">
+            <input id="contract-asaas-id" type="hidden" value="">
+            <label class="contract-field contract-span-2">Empresa no CRM
+              <select id="contract-company" class="input" required></select>
+            </label>
+            <label class="contract-field contract-span-2">Produto / Plano AV
+              <select id="contract-product" class="input" required></select>
+            </label>
+            <label class="contract-field">Meses do contrato
+              <input id="contract-installments-fallback" class="input" type="number" min="1" max="120" step="1" value="12" required>
+              <small class="field-help">Só é usado se o Asaas não informar limite de cobranças.</small>
+            </label>
+            <label class="contract-field">Dias de tolerância
+              <input id="contract-tolerance" class="input" type="number" min="0" max="30" step="1" value="3" required>
+            </label>
+            <div class="contract-form-actions contract-span-2">
+              <p class="contract-form-note">A importação não cria cobrança. Ela apenas vincula uma assinatura já existente no Asaas ao controle de acesso da AV.</p>
+              <button id="contract-import-btn" class="btn btn-primary" type="submit" disabled>Importar e vincular</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head contracts-list-head">
+            <div>
+              <p class="eyebrow">CONTRATOS</p>
+              <h2>Contratos e acessos</h2>
+              <p>Acompanhe produto, cobrança, vencimento e liberação do cliente.</p>
+            </div>
+            <input id="contract-search" class="input search" type="search" placeholder="Pesquisar cliente, produto ou status...">
+          </div>
+          <div class="table-wrap contract-table-wrap">
+            <table class="contract-table">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Produto</th>
+                  <th>Valor</th>
+                  <th>Parcelas</th>
+                  <th>Próximo vencimento</th>
+                  <th>Status</th>
+                  <th>Acesso</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="contracts-body"><tr><td colspan="8" class="empty">Carregando contratos...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -131,147 +268,229 @@
           <button class="module-tab" data-module="notificacoes">Notificações</button>
           <button class="module-tab" data-module="usuarios">Usuários</button>
           <button class="module-tab" data-module="configuracoes">Configuração</button>
-          <button class="module-tab" data-module="ia">Agente IA</button>
         </div>
 
         <div id="crm-module-content"></div>
       </section>
 
-      <section id="creditos" class="section">
-        <div class="stats-grid credits-money-stats">
-          <article class="stat-card"><span>Empresas</span><strong id="credit-stat-empresas">0</strong></article>
-          <article class="stat-card"><span>Saldo disponível</span><strong id="credit-stat-saldo-money">R$ 0,00</strong></article>
-          <article class="stat-card"><span>Total creditado</span><strong id="credit-stat-creditado">R$ 0,00</strong></article>
-          <article class="stat-card"><span>Total consumido</span><strong id="credit-stat-consumido-money">R$ 0,00</strong></article>
-        </div>
-        <div class="panel">
-          <div class="panel-head">
-            <div><h2>Créditos de IA por empresa</h2><p>Saldo em reais separado por <code>empresa_id</code> e provedor. Os valores de uma empresa não alteram o saldo das demais.</p></div>
-            <button class="btn btn-secondary" id="ia-refresh-btn" type="button">Atualizar créditos</button>
+      <section id="crm-vendas" class="section">
+  <div class="panel avv-panel">
+    <div class="panel-head">
+      <div><p class="eyebrow">AV REPRESENTAÇÕES · GESTÃO MULTIEMPRESAS</p><h2>CRM Vendas 360 · WhatsApp Meta e Agente IA</h2>
+      <p>Gerencie testes gratuitos e instruções do robô por empresa, de forma independente do CRM Jurídico. A conexão com a Meta continua não configurada.</p></div>
+      <button class="btn btn-secondary" type="button" id="avv-refresh">Atualizar empresas</button>
+    </div>
+    <div class="access-kpis avv-stats">
+      <div class="access-kpi"><span>Empresas do Vendas 360</span><strong id="avv-total">—</strong></div>
+      <div class="access-kpi"><span>Testes ativos</span><strong id="avv-trials">—</strong></div>
+      <div class="access-kpi"><span>Robôs habilitados</span><strong id="avv-agents">—</strong></div>
+    </div>
+    <div id="avv-status" class="avv-status" role="status" aria-live="polite">Aguardando carregamento do módulo de vendas.</div>
+    <div class="avv-toolbar"><input id="avv-search" class="input" type="search" placeholder="Pesquisar empresa pelo nome ou UUID" aria-label="Pesquisar empresas de vendas"></div>
+    <div class="avv-layout">
+      <div id="avv-list" class="avv-list" aria-label="Empresas CRM Vendas"><p class="empty">Clique em Atualizar empresas.</p></div>
+      <div class="avv-editor" id="avv-editor" hidden>
+        <h3 id="avv-name">Empresa</h3>
+        <p class="avv-sub" id="avv-id"></p>
+        <div class="avv-tags" id="avv-tags"></div>
+        <div class="avv-block">
+          <h4>Teste grátis e liberação</h4>
+          <p>A política é registrada por empresa. Para bloquear o login e as sessões de verdade, a validação precisa estar integrada ao fluxo de autenticação do CRM. Deixe desativado até confirmar essa integração.</p>
+          <label class="avv-check"><input type="checkbox" id="avv-gate"> Ativar política de acesso da empresa (requer validação pelo backend)</label>
+          <label class="avv-check"><input type="checkbox" id="avv-manual"> Liberação manual (independente do teste)</label>
+          <button id="avv-save-policy" class="btn btn-secondary" type="button">Salvar política de acesso</button>
+          <p id="avv-trial-text" class="avv-trial-text"></p>
+          <div class="avv-actions">
+            <button data-avv-days="7" class="btn btn-secondary btn-small" type="button">+ 7 dias</button>
+            <button data-avv-days="15" class="btn btn-secondary btn-small" type="button">+ 15 dias</button>
+            <button data-avv-days="30" class="btn btn-secondary btn-small" type="button">+ 30 dias</button>
+            <button id="avv-end-trial" class="btn btn-secondary btn-small" type="button">Encerrar teste</button>
           </div>
-          <div class="table-wrap">
-            <table class="money-credit-table">
-              <thead><tr><th>Empresa</th><th>ID</th><th>Provedor</th><th>Saldo</th><th>Creditado</th><th>Consumido</th><th>Prompt</th><th>Agente</th><th>Ações</th></tr></thead>
-              <tbody id="creditos-body"><tr><td colspan="9" class="empty">Carregando...</td></tr></tbody>
-            </table>
-          </div>
+          <small>Os dias são contados a partir de agora. O vencimento só bloqueará o acesso quando o backend de login e sessões consultar essa política.</small>
         </div>
-      </section>
+        <form id="avv-prompt-form" class="avv-block">
+          <h4>Prompt do robô de vendas</h4>
+          <label class="avv-check"><input type="checkbox" id="avv-agent"> Agente de IA habilitado</label>
+          <label for="avv-prompt">Instruções do sistema para a empresa</label>
+          <textarea class="input prompt-editor" id="avv-prompt" rows="11" maxlength="12000" placeholder="Ex.: Você é o assistente comercial...
+Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textarea>
+          <div class="avv-editor-footer"><small id="avv-count">0 / 12.000 caracteres</small><button class="btn btn-primary" type="submit">Salvar prompt e agente</button></div>
+          <small>O n8n deverá carregar esta configuração no fluxo do robô antes de cada atendimento. O salvamento não ativa um chatbot por si só.</small>
+        </form>
+        <div class="avv-block avv-wallet" id="avv-wallet">
+          <div class="avv-credit-head"><div><h4>Saldo de IA por empresa · Gemini</h4><p>Créditos em reais alocados à empresa pela AV. Esta carteira é independente da recarga oficial feita no Google AI Studio.</p></div><span class="avv-chip">BRL</span></div>
+          <div class="avv-credit-amount"><span>Saldo alocado disponível</span><strong id="avv-credit-balance">—</strong><small id="avv-credit-updated">Aguardando consulta</small></div>
+          <div class="avv-credit-actions">
+            <label for="avv-topup-amount">Registrar alocação (R$)</label>
+            <input id="avv-topup-amount" class="input" type="number" min="0.01" max="1000000" step="0.01" placeholder="Ex.: 30,00" inputmode="decimal">
+            <button id="avv-topup" class="btn btn-primary" type="button">Registrar recarga interna</button>
+            <button id="avv-credit-refresh" class="btn btn-secondary" type="button">Atualizar saldo</button>
+          </div>
+          <p id="avv-credit-status" class="avv-credit-status" role="status" aria-live="polite"></p>
+          <h4>Movimentações da empresa</h4><div id="avv-transactions" class="avv-transactions"><p>Selecione uma empresa para consultar.</p></div>
+          <small>Recarga interna não transfere dinheiro ao Google. Os descontos automáticos exigem que o workflow Gemini registre cada chamada com custo real calculado.</small>
+          <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" class="avv-credit-link">Abrir faturamento no Google AI Studio ↗</a>
+        </div>
+        <div class="avv-block"><h4>WhatsApp oficial da Meta</h4><p id="avv-meta">Integração não configurada.</p><p>O canal do CRM exibirá a conexão real somente após configurar API, WABA, webhook e n8n no backend. Nenhum token é salvo neste painel.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
 
-      <section id="financeiro-api" class="section">
-        <div class="payment-hero">
+      <section id="ia-empresa" class="section">
+        <div class="panel ia-real-selector">
           <div>
-            <p class="eyebrow">FATURAMENTO REAL DOS PROVEDORES</p>
-            <h2>Financeiro das APIs</h2>
-            <p>Consulta a conta de faturamento da OpenAI e do Google Cloud pelo backend seguro. Nenhuma chave financeira é exposta no navegador.</p>
+            <p class="eyebrow">DINHEIRO REAL DOS PROVEDORES</p>
+            <h2>IA por Empresa</h2>
+            <p>Sem saldo interno, sem tokens virtuais e sem carteira do sistema. Toda nova empresa cadastrada no CRM aparece automaticamente aqui pelo <code>empresa_id</code>, com OpenAI, Gemini e campo de prompt próprios.</p>
           </div>
-          <button id="billing-refresh-btn" class="btn btn-primary" type="button">Atualizar saldos</button>
+          <select id="ia-company-select" class="input compact-select"></select>
         </div>
 
-        <div class="billing-summary-grid">
-          <article class="provider-finance-card" data-provider-card="openai">
+        <div class="billing-summary-grid ia-real-grid">
+          <article class="provider-finance-card">
             <div class="provider-finance-head">
               <div class="provider-logo">O</div>
               <div>
                 <h3>OpenAI API</h3>
-                <p id="openai-account-label">Conta de faturamento</p>
+                <p id="openai-account-label">Conta real da empresa</p>
               </div>
               <span id="openai-status" class="badge off">Aguardando</span>
             </div>
-            <div class="provider-money-grid">
-              <div class="provider-money"><span>Saldo / crédito</span><strong id="openai-balance">—</strong></div>
-              <div class="provider-money"><span>Gasto</span><strong id="openai-spent">—</strong></div>
-              <div class="provider-money"><span>Limite / orçamento</span><strong id="openai-limit">—</strong></div>
+            <div class="real-money-box">
+              <span>Gasto real no mês</span>
+              <strong id="openai-spent">—</strong>
             </div>
             <div class="billing-meta">
               <span>Atualizado: <b id="openai-updated">—</b></span>
-              <span id="openai-message">Backend ainda não consultado.</span>
+              <span id="openai-message">Selecione uma empresa.</span>
             </div>
-            <a class="btn btn-secondary btn-full" href="https://platform.openai.com/settings/organization/billing/overview" target="_blank" rel="noopener noreferrer">Abrir faturamento da OpenAI</a>
+            <div class="provider-actions">
+              <a id="openai-billing-link" class="btn btn-primary btn-full" href="https://platform.openai.com/settings/organization/billing/overview" target="_blank" rel="noopener noreferrer">Adicionar dinheiro real na OpenAI</a>
+            </div>
           </article>
 
-          <article class="provider-finance-card" data-provider-card="google">
+          <article class="provider-finance-card">
             <div class="provider-finance-head">
               <div class="provider-logo">G</div>
               <div>
                 <h3>Gemini / Google Cloud</h3>
-                <p id="google-account-label">Conta/projeto de faturamento</p>
+                <p id="google-account-label">Projeto real da empresa</p>
               </div>
               <span id="google-status" class="badge off">Aguardando</span>
             </div>
-            <div class="provider-money-grid">
-              <div class="provider-money"><span>Saldo / crédito</span><strong id="google-balance">—</strong></div>
-              <div class="provider-money"><span>Gasto</span><strong id="google-spent">—</strong></div>
-              <div class="provider-money"><span>Limite / orçamento</span><strong id="google-limit">—</strong></div>
+            <div class="real-money-box">
+              <span>Gasto real no mês</span>
+              <strong id="google-spent">—</strong>
             </div>
             <div class="billing-meta">
               <span>Atualizado: <b id="google-updated">—</b></span>
-              <span id="google-message">Backend ainda não consultado.</span>
+              <span id="google-message">Selecione uma empresa.</span>
             </div>
-            <a class="btn btn-secondary btn-full" href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir faturamento do Google Cloud</a>
+            <div class="provider-actions">
+              <a class="btn btn-primary btn-full" href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir cobrança real do Google Cloud</a>
+              <a id="google-connect-link" class="btn btn-secondary btn-full" href="/api/google/oauth/start">Conectar Google desta empresa</a>
+            </div>
           </article>
         </div>
 
-        <div class="panel billing-security-panel">
+        <div class="panel prompt-real-panel">
           <div class="panel-head">
             <div>
-              <h2>Segurança</h2>
-              <p>As credenciais de billing ficam somente nas variáveis secretas do Cloudflare. O frontend envia apenas a sessão administrativa para validar o acesso.</p>
+              <p class="eyebrow">PROMPT DO WHATSAPP</p>
+              <h2>Prompt do Gemini</h2>
+              <p id="prompt-company-meta">Selecione uma empresa.</p>
+              <p class="prompt-auto-note">Cada nova empresa do CRM recebe automaticamente esta área de prompt; basta escrever e salvar.</p>
             </div>
           </div>
+          <form id="prompt-form">
+            <textarea id="prompt-gemini" class="input prompt-editor" rows="11" maxlength="12000" placeholder="Exemplo: Sempre que o cliente entrar em contato, peça nome e CPF para agilizar o atendimento."></textarea>
+            <div class="prompt-actions">
+              <button id="prompt-save-btn" class="btn btn-primary" type="submit">Salvar prompt</button>
+            </div>
+          </form>
+          <p class="prompt-help">Este é o prompt usado pelo Agente WhatsApp Gemini da empresa selecionada.</p>
+        </div>
+
+        <div class="panel real-only-note">
+          <strong>Somente cobrança real.</strong>
+          <p>Este painel não cria saldo, crédito, token ou orçamento interno. Os botões de pagamento levam ao faturamento oficial dos provedores.</p>
         </div>
       </section>
 
-      <section id="historico" class="section">
+      <!-- Gestão de prompts para o CRM de Agendamento; independente do CRM Jurídico. -->
+<section id="gemini-real" class="section">
+ <div class="panel gemini-central">
+  <p class="eyebrow">FATURAMENTO REAL · GOOGLE AI STUDIO</p>
+  <h2>Central Gemini — Jurídico, Vendas e Agendamento</h2>
+  <p>Gerencie projetos e contas Google de cada empresa, sem confundir créditos internos com dinheiro comprado. As recargas são feitas no Google AI Studio. O saldo pago oficial só pode ser exibido aqui após integração autorizada com uma fonte oficial.</p>
+  <div class="gemini-alert" role="status"><strong>Integração financeira: pendente.</strong> Nenhum botão desta tela compra créditos, consulta saldo oficial ou altera dinheiro. O projeto Gemini principal está em nível gratuito/sem créditos confirmados e o faturamento dos projetos novos ainda precisa ser regularizado.</div>
+  <div class="gemini-grid">
+   <article class="gemini-module"><h3>CRM Jurídico</h3><p>Faturamento e gastos de empresas jurídicas.</p><span class="gemini-status">Saldo oficial não conectado</span><div class="gemini-links"><a href="https://aistudio.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir recarga oficial ↗</a><button type="button" data-go="ia-empresa">Gerenciar IA</button></div></article>
+   <article class="gemini-module"><h3>CRM Vendas 360</h3><p>Projetos Gemini e faturamento por empresa comercial.</p><span class="gemini-status">Saldo oficial não conectado</span><div class="gemini-links"><a href="https://aistudio.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir recarga oficial ↗</a><button type="button" data-go="crm-vendas">Abrir empresas de Vendas</button></div></article>
+   <article class="gemini-module"><h3>CRM de Agendamento</h3><p>Projetos Gemini e faturamento dos agentes de agenda.</p><span class="gemini-status">Saldo oficial não conectado</span><div class="gemini-links"><a href="https://aistudio.google.com/billing" target="_blank" rel="noopener noreferrer">Abrir recarga oficial ↗</a><button type="button" data-go="prompts-agenda">Abrir prompts de Agenda</button></div></article>
+  </div>
+  <div class="gemini-steps"><h3>Ativação por empresa (sem cobrança automática)</h3><ol><li>Vincule um projeto Google Cloud exclusivo à empresa.</li><li>Associe uma conta de faturamento ativa e exclusiva ao projeto, conforme regras do Google.</li><li>Crie a chave no projeto e guarde-a apenas nas credenciais seguras do backend.</li><li>Faça a compra de créditos reais no Google AI Studio e confirme o saldo lá.</li><li>Teste a chamada Gemini pelo backend da empresa e registre consumo por projeto.</li></ol><p>Enquanto as contas de faturamento estiverem encerradas ou com pagamento pendente, a integração permanece em preparação. Este painel não emite pagamentos.</p></div>
+ </div>
+</section>
+      <section id="prompts-agenda" class="section">
         <div class="panel">
-          <div class="panel-head">
-            <div><h2>Histórico financeiro da IA</h2><p>Entradas, retiradas e consumo em reais por empresa e provedor.</p></div>
-            <div class="history-filters">
-              <select id="historico-filtro" class="input compact-select"><option value="0">Todas as empresas</option></select>
-              <select id="historico-provedor" class="input compact-select"><option value="">Todos os provedores</option><option value="GEMINI">GEMINI</option><option value="OPENAI">OPENAI</option></select>
+          <div class="panel-head agenda-prompt-head">
+            <div>
+              <p class="eyebrow">AGENTE DE IA · CRM DE AGENDAMENTO</p>
+              <h2>Prompts por empresa</h2>
+              <p>Edite as orientações do agente de WhatsApp da empresa selecionada. Dados separados por <code>empresa_id</code> e salvos no PostgreSQL.</p>
             </div>
+            <button id="agenda-prompts-refresh-btn" type="button" class="btn btn-secondary">Atualizar empresas</button>
           </div>
-          <div class="table-wrap"><table><thead><tr><th>Data</th><th>Empresa</th><th>Provedor</th><th>Tipo</th><th>Valor</th><th>Saldo anterior</th><th>Saldo posterior</th><th>Observação</th></tr></thead><tbody id="historico-body"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody></table></div>
+          <div id="agenda-prompts-status" class="agenda-prompt-status" role="status" aria-live="polite">Clique nesta seção para carregar as empresas cadastradas no CRM de Agenda.</div>
+          <form id="agenda-prompt-form" class="agenda-prompt-form">
+            <label class="agenda-prompt-field" for="agenda-company-select">Empresa do CRM de Agenda
+              <select id="agenda-company-select" class="input" required disabled>
+                <option value="">Carregando empresas...</option>
+              </select>
+            </label>
+            <div class="agenda-prompt-information">
+              <span id="agenda-prompt-company-meta">Selecione uma empresa cadastrada.</span>
+              <span id="agenda-prompt-last-update">Ainda não atualizado.</span>
+            </div>
+            <label class="agenda-prompt-field" for="agenda-prompt-text">Prompt personalizado do agente
+              <textarea id="agenda-prompt-text" class="input prompt-editor" rows="12" maxlength="12000" placeholder="Defina instruções de atendimento para esta empresa, sem substituir as regras de segurança, consulta de serviços ou confirmação de horários." disabled></textarea>
+            </label>
+            <div class="agenda-prompt-actions">
+              <span id="agenda-prompt-count" class="agenda-prompt-count">0 / 12.000 caracteres</span>
+              <button id="agenda-prompt-save-btn" type="submit" class="btn btn-primary" disabled>Salvar prompt da empresa</button>
+            </div>
+          </form>
+          <p class="prompt-help">O texto complementa o prompt original do agente de agendamento. As regras fixas de autenticação, isolamento das empresas, serviços e horários permanecem no workflow.</p>
         </div>
       </section>
     </main>
   </div>
 
-  <dialog id="credit-dialog" class="dialog">
-    <form id="credit-form" method="dialog">
-      <div class="dialog-head"><div><p class="eyebrow">SALDO EM REAIS</p><h2 id="dialog-title">Adicionar saldo</h2><p id="dialog-company"></p></div><button type="button" class="icon-btn" id="dialog-close">×</button></div>
-      <input id="form-empresa-id" type="hidden"><input id="form-operation" type="hidden"><input id="form-provedor" type="hidden"><input id="form-saldo-atual" type="hidden">
-      <label>Provedor<input id="form-provedor-view" class="input" type="text" readonly></label>
-      <label>Valor (R$)<input id="form-valor" class="input" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
-      <label>Observação<textarea id="form-observacao" class="input" rows="3" maxlength="1000"></textarea></label>
-      <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="dialog-cancel">Cancelar</button><button type="submit" class="btn btn-primary" id="dialog-submit">Confirmar</button></div>
-    </form>
-  </dialog>
 
-  <dialog id="define-dialog" class="dialog">
-    <form id="define-form" method="dialog">
-      <div class="dialog-head"><div><p class="eyebrow">SALDO EM REAIS</p><h2>Definir saldo</h2><p id="define-company"></p></div><button type="button" class="icon-btn" id="define-close">×</button></div>
-      <input id="define-empresa-id" type="hidden"><input id="define-provedor" type="hidden"><input id="define-saldo-atual" type="hidden">
-      <label>Provedor<input id="define-provedor-view" class="input" type="text" readonly></label>
-      <label>Novo saldo (R$)<input id="define-saldo" class="input" type="number" min="0" step="0.01" inputmode="decimal" required></label>
-      <label>Observação<textarea id="define-observacao" class="input" rows="3" maxlength="1000"></textarea></label>
-      <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="define-cancel">Cancelar</button><button type="submit" class="btn btn-primary">Salvar saldo</button></div>
-    </form>
-  </dialog>
-
-  <dialog id="agent-dialog" class="dialog wide-dialog">
-    <form id="agent-form" method="dialog">
-      <div class="dialog-head"><div><p class="eyebrow">CONFIGURAÇÃO DO ROBÔ</p><h2>Prompt do Agente IA</h2><p id="agent-company"></p></div><button type="button" class="icon-btn" id="agent-close">×</button></div>
-      <input id="agent-empresa-id" type="hidden">
-      <label>Provedor<select id="agent-provider" class="input" disabled><option value="GEMINI">GEMINI · WhatsApp</option><option value="OPENAI">OPENAI · CRM</option></select></label>
-      <label>Prompt do sistema<textarea id="agent-prompt" class="input prompt-editor" rows="10" maxlength="12000" placeholder="Exemplo: Sempre que o cliente entrar em contato, peça nome e CPF para agilizar o atendimento. Não invente informações e siga as regras do escritório."></textarea></label>
-      <p class="prompt-help">No provedor GEMINI, este texto é carregado no <strong>Agente WhatsApp Gemini</strong> antes de cada resposta da empresa selecionada.</p>
-      <div class="toggle-grid">
-        <label class="toggle-card"><input id="agent-active" type="checkbox"><span><strong>Agente ativo</strong><small>Permite que o robô responda.</small></span></label>
-        <label class="toggle-card"><input id="balance-active" type="checkbox"><span><strong>Controle de saldo ativo</strong><small>Bloqueia o uso quando o saldo não estiver liberado.</small></span></label>
+  <dialog id="contract-cancel-dialog" class="dialog contract-cancel-dialog">
+    <div class="dialog-head">
+      <div>
+        <p class="eyebrow">CANCELAMENTO</p>
+        <h2>Cancelar contrato</h2>
       </div>
-      <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="agent-cancel">Cancelar</button><button type="submit" class="btn btn-primary" id="agent-submit">Salvar configuração</button></div>
-    </form>
+      <button type="button" class="icon-btn" id="contract-cancel-close" aria-label="Fechar">×</button>
+    </div>
+    <div class="contract-cancel-summary">
+      <span>Contrato selecionado</span>
+      <strong id="contract-cancel-company">—</strong>
+      <small id="contract-cancel-product">—</small>
+      <small id="contract-cancel-id">—</small>
+    </div>
+    <div class="delete-warning">
+      <strong>A recorrência será encerrada.</strong>
+      <p>Quando houver assinatura no Asaas, o sistema tenta cancelá-la primeiro. O contrato local só é marcado como cancelado após a operação prevista no backend.</p>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" id="contract-cancel-back">Voltar</button>
+      <button type="button" class="btn btn-danger" id="contract-cancel-confirm">Cancelar contrato</button>
+    </div>
   </dialog>
 
   <dialog id="detail-dialog" class="dialog wide-dialog">
@@ -279,7 +498,109 @@
     <pre id="detail-json" class="json-view"></pre>
   </dialog>
 
+
+  <dialog id="trial-dialog" class="dialog trial-dialog">
+    <div class="dialog-head">
+      <div>
+        <p class="eyebrow">LIBERAÇÃO MANUAL</p>
+        <h2>Teste grátis</h2>
+      </div>
+      <button type="button" class="icon-btn" id="trial-close" aria-label="Fechar">×</button>
+    </div>
+
+    <div class="trial-target">
+      <span>Empresa selecionada</span>
+      <strong id="trial-company-name">—</strong>
+      <small id="trial-company-email">—</small>
+      <small id="trial-company-id">—</small>
+    </div>
+
+    <form id="trial-form">
+      <label>Escolha um período rápido</label>
+      <div class="trial-quick-grid" role="group" aria-label="Períodos de teste">
+        <button type="button" class="trial-quick-btn" data-trial-days="3">3 dias</button>
+        <button type="button" class="trial-quick-btn active" data-trial-days="7">7 dias</button>
+        <button type="button" class="trial-quick-btn" data-trial-days="15">15 dias</button>
+        <button type="button" class="trial-quick-btn" data-trial-days="30">30 dias</button>
+      </div>
+
+      <div class="trial-divider"><span>ou escolha a data final</span></div>
+
+      <label>Teste grátis até
+        <input id="trial-end-date" class="input" type="date">
+      </label>
+
+      <p id="trial-current-status" class="trial-current-status">Sem teste ativo.</p>
+
+      <div class="dialog-actions trial-actions">
+        <button type="button" class="btn btn-danger trial-end-btn" id="trial-end-now">Encerrar teste</button>
+        <button type="button" class="btn btn-secondary" id="trial-cancel">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="trial-save">Liberar acesso</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="delete-saas-company-dialog" class="dialog delete-company-dialog">
+    <div class="dialog-head">
+      <div>
+        <p class="eyebrow">EXCLUSÃO PERMANENTE</p>
+        <h2>Excluir empresa SaaS</h2>
+      </div>
+      <button type="button" class="icon-btn" id="delete-saas-company-close">×</button>
+    </div>
+    <div class="delete-warning">
+      <strong>Esta ação é permanente.</strong>
+      <p>Serão removidos o cadastro central da empresa, o usuário/e-mail vinculado no Supabase Auth e os registros da empresa identificados pelo mesmo empresa_id no banco.</p>
+      <p>A AV Representações permanece protegida e não pode ser excluída por este botão. Workflows compartilhados do n8n não são apagados.</p>
+    </div>
+    <div class="delete-company-target">
+      <span>Empresa selecionada</span>
+      <strong id="delete-saas-company-name">—</strong>
+      <small id="delete-saas-company-email">—</small>
+      <small id="delete-saas-company-id">—</small>
+    </div>
+    <form id="delete-saas-company-form">
+      <label>Para confirmar, digite exatamente o nome da empresa:
+        <input id="delete-saas-company-confirmation" class="input" type="text" autocomplete="off" required>
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-secondary" id="delete-saas-company-cancel">Cancelar</button>
+        <button type="submit" class="btn btn-danger" id="delete-saas-company-submit" disabled>Excluir permanentemente</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="delete-company-dialog" class="dialog delete-company-dialog">
+    <div class="dialog-head">
+      <div>
+        <p class="eyebrow">EXCLUSÃO PERMANENTE</p>
+        <h2>Excluir empresa</h2>
+      </div>
+      <button type="button" class="icon-btn" id="delete-company-close">×</button>
+    </div>
+    <div class="delete-warning">
+      <strong>Esta ação é permanente.</strong>
+      <p>Serão apagados os dados desta empresa nos módulos do CRM Jurídico, incluindo clientes, processos, documentos, agenda, notificações, WhatsApp, configurações e registros antigos de IA.</p>
+      <p>Contas reais da OpenAI/Google e segredos do Cloudflare não são apagados por este botão.</p>
+    </div>
+    <div class="delete-company-target">
+      <span>Empresa selecionada</span>
+      <strong id="delete-company-name">—</strong>
+      <small id="delete-company-id">—</small>
+    </div>
+    <form id="delete-company-form">
+      <label>Para confirmar, digite exatamente o nome da empresa:
+        <input id="delete-company-confirmation" class="input" type="text" autocomplete="off" required>
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-secondary" id="delete-company-cancel">Cancelar</button>
+        <button type="submit" class="btn btn-danger" id="delete-company-submit" disabled>Excluir permanentemente</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/creditos.js"></script>
+  <script src="./js/creditos.js?v=20261013-agenda-admin"></script>
+  <script src="./js/vendas-admin.js?v=20261013-carteira-v2" defer></script>
 </body>
 </html>
