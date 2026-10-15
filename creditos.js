@@ -756,6 +756,7 @@
     const p = provider === 'openai' ? 'openai' : 'google';
     const ok = Boolean(data?.ok);
     const status = $(`#${p}-status`);
+    if (!status) return; // Provedor removido da interface (ex.: Google); não acessar elementos inexistentes.
     status.textContent = ok ? 'Conectado' : (data?.configured === false ? 'Não configurado' : 'Indisponível');
     status.classList.toggle('on',ok);
     status.classList.toggle('off',!ok);
@@ -768,6 +769,7 @@
   async function loadProviderBilling(companyId) {
     if (!companyId) return;
     renderProviderBilling('openai',{ok:false,configured:false,message:'Consultando...'});
+    renderProviderBilling('google',{ok:false,configured:false,message:'Consultando...'});
     try {
       const response = await fetch(`/api/billing/summary?empresa_id=${encodeURIComponent(companyId)}`, {
         headers:{'Accept':'application/json','Authorization':`Bearer ${session.access_token}`},
@@ -778,8 +780,10 @@
       try { data = JSON.parse(raw); } catch { throw new Error(`Resposta inválida do financeiro (${response.status}).`); }
       if (!response.ok && !data?.providers) throw new Error(data?.message || `HTTP ${response.status}`);
       renderProviderBilling('openai',data?.providers?.openai || {ok:false,configured:false,message:'OpenAI não configurada para esta empresa.'});
+      renderProviderBilling('google',data?.providers?.google || {ok:false,configured:false,message:'Google não configurado para esta empresa.'});
     } catch(error) {
       renderProviderBilling('openai',{ok:false,message:error.message});
+      renderProviderBilling('google',{ok:false,message:error.message});
       toast(error.message,true);
     }
   }
@@ -790,6 +794,8 @@
     $('#ia-company-select').value = String(companyId);
     $('#prompt-company-meta').textContent = `${company.empresa_nome} · empresa_id ${company.empresa_id}`;
     $('#prompt-gemini').value = promptFor(companyId);
+    const googleLink = $('#google-connect-link');
+    if (googleLink) googleLink.href = `/api/google/oauth/start?empresa_id=${encodeURIComponent(companyId)}`;
     showSection('ia-empresa');
     await loadProviderBilling(companyId);
   }
@@ -817,7 +823,7 @@
       else promptRows.push({empresa_id,provedor:'GEMINI',prompt_sistema});
       renderStats();
       renderCompanyLists();
-      toast('Prompt do agente salvo para esta empresa.');
+      toast('Prompt do Gemini salvo para esta empresa.');
     } catch(error) { toast(error.message,true); }
     finally { button.disabled = false; }
   }
@@ -1312,6 +1318,8 @@
       $('#ia-company-select').value = String(firstId);
       $('#prompt-company-meta').textContent = `${empresas[0].empresa_nome} · empresa_id ${firstId}`;
       $('#prompt-gemini').value = promptFor(firstId);
+      const googleLink = $('#google-connect-link');
+      if (googleLink) googleLink.href = `/api/google/oauth/start?empresa_id=${encodeURIComponent(firstId)}`;
 
       if(initial==='ia-empresa') {
         await openIaCompany($('#ia-company-select').value);
