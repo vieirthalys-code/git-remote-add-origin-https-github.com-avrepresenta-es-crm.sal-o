@@ -54,6 +54,39 @@
 .av-openai-sales-note a {display:inline-flex;align-items:center;gap:6px;border:1px solid #f2ab86;color:#c24d14;background:#fff;padding:10px 14px;border-radius:10px;text-decoration:none}
 .av-openai-sales-note a:hover {background:#fff2e9}
 @media(max-width:700px) {.av-openai-sales-note a{width:100%;justify-content:center}}
+
+/* AV V37 - Carteira AV OpenAI (somente nesta secao) */
+#av-wallet {margin:24px 0 0;border:1px solid #f0d5c6;border-radius:18px;padding:clamp(17px,2.4vw,28px);background:linear-gradient(165deg,#fff,#fff9f5);color:#252b34}
+#av-wallet *{box-sizing:border-box}
+#av-wallet h3{margin:0 0 8px;font-size:22px;font-weight:600;letter-spacing:-.03em}
+#av-wallet p{font-size:13px;line-height:1.6;color:#5e6674}
+#av-wallet h4{font-size:15px;font-weight:600;color:#27303c;margin:10px 0}
+#av-wallet .wallet-muted{font-size:12px;color:#666f7c}
+#av-wallet .wallet-pill{display:inline-flex;padding:6px 10px;background:#fff0e6;color:#994514;border-radius:99px;font-size:11px}
+#av-wallet .wallet-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:19px 0}
+#av-wallet .wallet-kpi{padding:17px;border:1px solid #ece7e3;background:#fff;border-radius:15px;min-width:0}
+#av-wallet .wallet-kpi span{display:block;font-size:12px;color:#616b78}
+#av-wallet .wallet-kpi strong{display:block;font-size:23px;font-weight:600;margin:8px 0;overflow-wrap:anywhere}
+#av-wallet .wallet-layout{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin:13px 0}
+#av-wallet .wallet-card{background:#fff;border:1px solid #ece6e0;border-radius:15px;padding:18px;min-width:0}
+#av-wallet .wallet-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:9px 0}
+#av-wallet label{font-size:12px;color:#59616d;display:block}
+#av-wallet input,#av-wallet select{display:block;margin-top:6px;width:100%;min-width:0;border:1px solid #d8dde5;border-radius:9px;background:white;padding:10px 12px;color:#212936;font-size:14px;height:43px}
+#av-wallet input:focus-visible,#av-wallet select:focus-visible,#av-wallet button:focus-visible{outline:2px solid #ea6b30;outline-offset:2px}
+#av-wallet button{border-radius:10px;min-height:42px;border:1px solid #e4a582;padding:9px 13px;cursor:pointer;background:#fff;color:#ab4716;font:inherit;font-size:13px}
+#av-wallet button.primary{background:#f26b31;color:#fff;border-color:#f26b31}
+#av-wallet button:disabled{cursor:not-allowed;opacity:.5}
+#av-wallet #wallet-note{border:1px solid #ead5ca;border-radius:12px;background:#fff9f5;padding:12px;margin:12px 0;font-size:13px}
+#av-wallet #wallet-note[data-tone="error"]{border-color:#f6bbbb;color:#972e2e;background:#fff2f2}
+#av-wallet #wallet-note[data-tone="success"]{border-color:#b7dbc6;color:#246444;background:#f0faf4}
+#av-wallet .wallet-table-wrap{overflow-x:auto;border:1px solid #ebedf0;border-radius:12px;background:#fff;margin-top:9px}
+#av-wallet table{border-collapse:collapse;width:100%;min-width:550px;font-size:12px}
+#av-wallet td,#av-wallet th{padding:11px 12px;border-bottom:1px solid #edf0f2;text-align:left;white-space:nowrap}
+#av-wallet th{color:#6a7181;font-weight:500;background:#fafbfc}
+#av-wallet td{color:#283244}
+#av-wallet .wallet-warning{color:#875014;background:#fff4e6;border:1px solid #ffdfae;border-radius:10px;padding:12px;font-size:12px;margin-top:10px}
+@media (max-width:800px){#av-wallet .wallet-layout{grid-template-columns:1fr}#av-wallet .wallet-kpis{grid-template-columns:1fr}#av-wallet .wallet-fields{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -482,6 +515,63 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
     </form>
     <p class="av-v31-foot">A OpenAI cobra em USD. Gasto por projeto não é saldo pré-pago por empresa. O saldo é da organização OpenAI; para créditos realmente independentes, use organizações distintas com faturamento próprio. A antiga carteira interna de Vendas não é utilizada neste painel.</p>
   </div>
+
+<!-- V37: preserva selecao/salvamento existente. Os valores abaixo sao ORCAMENTOS INTERNOS,
+     lastreados no saldo informado manualmente; nunca afirmam ser carteiras oficiais OpenAI. -->
+<div id="av-wallet" aria-labelledby="wallet-title">
+ <span class="wallet-pill">FINANÇAS · AV REPRESENTAÇÕES</span>
+ <h3 id="wallet-title">Carteira central OpenAI · distribuição por empresa</h3>
+ <p>Você compra créditos <strong>no site oficial da OpenAI</strong> e informa aqui o saldo que conferiu. O painel reserva orçamento em reais para cada empresa. A separação é feita no sistema da AV, não na organização da OpenAI. Nenhum botão aqui realiza pagamentos.</p>
+ <div class="wallet-kpis" aria-live="polite">
+  <div class="wallet-kpi"><span>Saldo central declarado (R$)</span><strong id="wallet-backing">—</strong><small class="wallet-muted" id="wallet-checked">Ainda não conferido</small></div>
+  <div class="wallet-kpi"><span>Disponível para distribuir (R$)</span><strong id="wallet-free">—</strong><small class="wallet-muted">Não inclui verba atribuída às empresas</small></div>
+  <div class="wallet-kpi"><span>Comprometido com empresas (R$)</span><strong id="wallet-allocated">—</strong><small class="wallet-muted" id="wallet-deficit">Sem saldo confirmado</small></div>
+ </div>
+ <div class="wallet-layout">
+  <div class="wallet-card">
+   <h4>1. Conferir o saldo na OpenAI</h4>
+   <p>Confira o valor em dólares em <a href="https://platform.openai.com/settings/organization/billing/overview" rel="noopener noreferrer" target="_blank">Faturamento oficial ↗</a>. Informe a cotação adotada para converter o orçamento para R$. Não adiciona dinheiro à OpenAI.</p>
+   <div class="wallet-fields">
+    <label>Saldo que você viu (US$)<input id="wallet-usd" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex.: 9.84"></label>
+    <label>Cotação USD → BRL<input id="wallet-fx" type="number" min="1" max="30" step="0.0001" inputmode="decimal" placeholder="Ex.: 5.30"></label>
+   </div>
+   <button type="button" class="primary" id="wallet-verify">Registrar saldo conferido</button>
+   <p class="wallet-muted">Conferência <strong>manual</strong>: ao usar outras chaves ou serviços da organização, atualize aqui o saldo. Exige revisão depois de pagamentos ou consumos externos.</p>
+  </div>
+  <div class="wallet-card">
+   <h4>2. Vincular empresa e distribuir verba</h4>
+   <p>Primeiro selecione o CRM e a empresa no editor de prompt logo acima. Depois clique em vincular. Você também poderá usar a lista abaixo.</p>
+   <button type="button" id="wallet-link">Vincular empresa selecionada</button>
+   <label style="margin:12px 0">Carteira da empresa<select id="wallet-select"><option value="">Carregando carteiras…</option></select></label>
+   <div class="wallet-fields">
+    <label>Valor para distribuir (R$)<input id="wallet-amount" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="Ex.: 25.00"></label>
+    <label>Observação<input id="wallet-memo" maxlength="160" placeholder="Ex.: verba de outubro"></label>
+   </div>
+   <div style="display:flex;flex-wrap:wrap;gap:8px">
+    <button type="button" class="primary" id="wallet-credit">Distribuir para empresa</button>
+    <button type="button" id="wallet-return">Devolver verba não utilizada</button>
+   </div>
+  </div>
+ </div>
+ <div class="wallet-card">
+  <h4>3. Preço do modelo usado no n8n</h4>
+  <p>Antes de ativar o bloqueio automático, cadastre os preços oficiais por milhão de tokens do modelo que está em uso. O sistema não inventará preços e interromperá a liquidação se não houver tarifa.</p>
+  <div class="wallet-fields">
+   <label>ID exato do modelo<input id="wallet-model" placeholder="Modelo configurado no n8n"></label>
+   <label>Preço de entrada (US$ / milhão)<input id="wallet-input-price" type="number" step="0.000001" min="0.000001"></label>
+   <label>Preço de saída (US$ / milhão)<input id="wallet-output-price" type="number" step="0.000001" min="0.000001"></label>
+   <label>Fonte oficial<input id="wallet-price-source" placeholder="https://…"></label>
+  </div>
+  <button type="button" id="wallet-set-price">Salvar tarifa conferida</button>
+ </div>
+ <p id="wallet-note" role="status" aria-live="polite">Conecte o gateway no n8n para habilitar a carteira. Nenhum dinheiro será movimentado até lá.</p>
+ <div class="wallet-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h4>Carteiras por CRM e empresa</h4><button type="button" id="wallet-refresh">Atualizar carteiras</button></div>
+  <div class="wallet-table-wrap"><table><thead><tr><th>CRM</th><th>Empresa</th><th>Disponível</th><th>Reservado</th><th>Pendência</th></tr></thead><tbody id="wallet-rows"><tr><td colspan="5">Aguardando conexão…</td></tr></tbody></table></div>
+ </div>
+ <p class="wallet-warning">Proteção importante: o bloqueio real só funcionará após conectar, em <strong>cada workflow</strong>, as operações de reserva ANTES da chamada à OpenAI e de liquidação DEPOIS. O orçamento não é um limite oficial da OpenAI. As chamadas fora do n8n continuam podendo consumir o saldo da organização.</p>
+</div>
+
   <div class="gemini-steps"><h3>Como ativar o consumo real por empresa</h3><ol><li>Crie ou identifique um projeto OpenAI para cada empresa e CRM.</li><li>Configure no backend os identificadores de projeto e uma chave administrativa em Secret, nunca no GitHub.</li><li>No n8n, selecione a credencial e o modelo OpenAI correspondente, lendo o campo <code>prompt_sistema</code> já salvo.</li><li>Confira o saldo pré-pago real na OpenAI Platform e os gastos oficiais por projeto aqui após a integração.</li></ol><p>O painel não compra créditos nem transfere valores entre empresas. Alterar o provedor no painel não altera o modelo utilizado pelos workflows.</p></div>
  </div>
 </section>
@@ -837,5 +927,68 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
   if(location.hash==='#gemini-real')setTimeout(()=>reload({force:false}),300);
 })();
 </script>
+
+<script id="av-wallet-v37">
+(() => {
+ 'use strict';
+ const root=document.getElementById('av-wallet');if(!root||root.dataset.active)return;root.dataset.active='1';
+ const $=id=>document.getElementById(id);const fmt=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+ const rCents=x=>fmt.format(Number(x||0)/100);
+ const state={data:null,busy:false};
+ const show=(msg,tone='info')=>{const e=$('wallet-note');e.textContent=msg;e.dataset.tone=tone;};
+ function busy(v){state.busy=v;for(const b of root.querySelectorAll('button'))b.disabled=v;}
+ async function request(acao,payload={}){
+  const token=await window.AV_ADMIN_AUTH?.getToken?.();if(!token)throw new Error('Faça login no Painel Admin antes de usar a carteira.');
+  const res=await fetch('/api/openai-wallet/admin',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({acao,...payload}),cache:'no-store'});
+  const raw=await res.text();let obj;try{obj=JSON.parse(raw);}catch{throw new Error('A função da carteira não devolveu JSON (HTTP '+res.status+'). Verifique implantação das Pages Functions.');}
+  if(!res.ok||obj?.ok!==true)throw new Error(obj?.erro||obj?.error||'Falha na carteira (HTTP '+res.status+').');return obj;
+ }
+ const empty=(element,text)=>{element.replaceChildren();const row=document.createElement('tr');const td=document.createElement('td');td.colSpan=5;td.textContent=text;row.appendChild(td);element.appendChild(row);};
+ function render(d){state.data=d;
+  $('wallet-backing').textContent=d.verificado_em?rCents(d.lastro_centavos):'Não informado';
+  $('wallet-free').textContent=d.verificado_em?rCents(d.livre_centavos):'—';
+  const wallets=Array.isArray(d.carteiras)?d.carteiras:[];
+  const allocated=wallets.reduce((n,w)=>n+Number(w.saldo_centavos||0)+Number(w.reservado_centavos||0),0);
+  $('wallet-allocated').textContent=rCents(allocated);
+  $('wallet-checked').textContent=d.verificado_em?'Conferido manualmente em '+new Date(d.verificado_em).toLocaleString('pt-BR'):'Não verificado';
+  const deficit=Number(d.deficit_centavos||0);$('wallet-deficit').textContent=deficit?'DÉFICIT '+rCents(deficit)+' · novas reservas bloqueadas':'Sem déficit de lastro';
+  const options=$('wallet-select'),prior=options.value;options.replaceChildren();const p=document.createElement('option');p.value='';p.textContent='Selecione a carteira';options.appendChild(p);
+  for(const w of wallets){const o=document.createElement('option');o.value=w.crm+'|'+w.empresa_id;o.textContent=w.empresa_nome+' · '+({juridico:'Jurídico',agenda:'Agenda',vendas:'Vendas'}[w.crm]||w.crm);options.appendChild(o);}
+  if([...options.options].some(o=>o.value===prior))options.value=prior;
+  const body=$('wallet-rows');body.replaceChildren();if(!wallets.length){empty(body,'Nenhuma carteira cadastrada. Vincule uma empresa acima.');return;}
+  for(const w of wallets){const tr=document.createElement('tr');for(const value of [w.crm,w.empresa_nome,rCents(w.saldo_centavos),rCents(w.reservado_centavos),rCents(w.divida_centavos)]){const td=document.createElement('td');td.textContent=value;tr.appendChild(td);}body.appendChild(tr);}
+ }
+ async function run(job,success){if(state.busy)return;busy(true);try{const data=await job();show(success||'Operação concluída.','success');const d=await request('resumo');render(d);}catch(e){show(e.message||String(e),'error');}finally{busy(false);}}
+ $('wallet-refresh').addEventListener('click',()=>run(()=>request('resumo'),'Carteiras atualizadas.'));
+ $('wallet-verify').addEventListener('click',()=>run(async()=>{
+  const usd=Number($('wallet-usd').value),fx=Number($('wallet-fx').value);
+  if(!$('wallet-usd').value||!$('wallet-fx').value||!(usd>=0)||!(fx>=1&&fx<=30))throw new Error('Preencha saldo em USD e cotação válida.');
+  if(!confirm('Você conferiu este saldo no site oficial da OpenAI? Isto NÃO compra créditos. Atualizar o lastro para US$ '+usd.toFixed(2)+' / cotação '+fx.toFixed(4)+'?'))throw new Error('Conferência cancelada.');
+  return request('conferir_lastro',{saldo_usd:usd.toFixed(2),usd_brl:fx.toFixed(4),confirmacao:'CONFIRMEI_NO_SITE_OPENAI'});
+ },'Lastro registrado com base na conferência manual.'));
+ $('wallet-link').addEventListener('click',()=>run(async()=>{
+  const option=$('av31-company')?.selectedOptions?.[0];const id=$('av31-company')?.value||'';const crm=document.querySelector('[data-av31-crm].is-active')?.getAttribute('data-av31-crm');
+  if(!['juridico','agenda','vendas'].includes(crm)||!id)throw new Error('Selecione um CRM e uma empresa no editor de prompt acima.');
+  return request('cadastrar',{crm,empresa_id:String(id),empresa_nome:(option?.textContent||id).replace(/\s*[·•]\s*\S+$/,'').slice(0,240)});
+ },'Empresa vinculada à carteira.'));
+ const selection=()=>{const key=$('wallet-select').value;const cut=key.indexOf('|');if(cut<1)throw new Error('Selecione uma carteira da lista.');return {crm:key.slice(0,cut),empresa_id:key.slice(cut+1)};};
+ const amount=()=>{const val=Number($('wallet-amount').value);const cents=Math.round(val*100);if(!Number.isSafeInteger(cents)||cents<=0||Math.abs(val*100-cents)>.00001)throw new Error('Digite um valor positivo com até 2 casas decimais.');return cents;};
+ for(const [btn,acao] of [['wallet-credit','alocar'],['wallet-return','devolver']])$(btn).addEventListener('click',()=>run(async()=>{
+  const s=selection(),c=amount();const label=acao==='alocar'?'Distribuir':'Devolver';if(!confirm(label+' '+rCents(c)+' · '+s.crm+' / '+s.empresa_id+'?'))throw new Error('Operação cancelada.');
+  return request(acao,{...s,valor_centavos:c,referencia:crypto.randomUUID(),observacao:$('wallet-memo').value.trim()});
+ },acao==='alocar'?'Verba distribuída (não é pagamento OpenAI).':'Verba não utilizada devolvida ao fundo central.'));
+ $('wallet-set-price').addEventListener('click',()=>run(async()=>{
+  const modelo=$('wallet-model').value.trim();const a=Number($('wallet-input-price').value),b=Number($('wallet-output-price').value);const fonte=$('wallet-price-source').value.trim();
+  if(!modelo||!(a>0)||!(b>0)||!/^https:\/\//i.test(fonte))throw new Error('Modelo, preços positivos e URL oficial são obrigatórios.');
+  if(!confirm('Você conferiu os preços atuais do modelo '+modelo+' na documentação oficial?'))throw new Error('Cancelado.');
+  return request('tarifa',{modelo,entrada_usd_milhao:a,saida_usd_milhao:b,fonte});
+ },'Tarifa cadastrada.'));
+ // A seção de carteira não interfere no roteador e nos eventos de seleção/salvamento de prompts já existentes.
+ const observer=new MutationObserver(()=>{if(!document.getElementById('app')?.classList.contains('hidden')&&!state.data){observer.disconnect();run(()=>request('resumo'),'Carteira carregada.');}});
+ observer.observe(document.getElementById('app'),{attributes:true,attributeFilter:['class']});
+ if(!document.getElementById('app')?.classList.contains('hidden')){observer.disconnect();run(()=>request('resumo'),'Carteira carregada.');}
+})();
+</script>
+
 </body>
 </html>

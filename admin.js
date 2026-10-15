@@ -1,42 +1,41 @@
-/* Cloudflare Pages Function: ponte autenticada Admin AV -> n8n -> PostgreSQL Cloudfy.
-   Não conecta em REST do Supabase para os dados do CRM Vendas (eles estão na Cloudfy).
-   Secret do n8n jamais é enviado ao navegador. */
-function reply(payload,status=200){return new Response(JSON.stringify(payload),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}
-const fail=(error,status=400)=>reply({ok:false,error},status);
-const actions=new Set(['listar','saldo','recarga','politica','teste','encerrar_teste','prompt']);
-const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export async function onRequestPost({request,env}){
- const url=String(env.AV_SUPABASE_URL||env.SUPABASE_URL||'').replace(/\/$/,'');
- const publishable=env.AV_SUPABASE_PUBLISHABLE_KEY||env.SUPABASE_ANON_KEY;
- const target=String(env.AV_VENDAS_N8N_ADMIN_URL||'');
- const secret=env.AV_VENDAS_N8N_ADMIN_SHARED_SECRET;
- if(!url||!publishable||!target||!secret) return fail('Faltam configurações de servidor para o CRM Vendas (veja o LEIA-ME).',503);
- if(!/^https:\/\/[^/]+\/webhook\//i.test(target))return fail('URL segura do webhook não configurada.',503);
- const authorization=request.headers.get('Authorization')||'';
- if(!/^Bearer\s+\S+$/i.test(authorization))return fail('Autenticação administrativa necessária.',401);
- let user;
- try{
-   const res=await fetch(`${url}/auth/v1/user`,{headers:{apikey:publishable,Authorization:authorization},cache:'no-store'});
-   if(!res.ok)return fail('Sessão do Admin inválida ou expirada.',401);
-   user=await res.json();
- }catch{return fail('Falha na validação do login administrativo.',502);}
- if(!user?.id||String(user?.email||'').toLowerCase().trim()!==String(env.AV_ADMIN_EMAIL||'avrep.tech@gmail.com').toLowerCase().trim())return fail('Administrador não autorizado.',403);
- let payload;
- try{payload=await request.json();}catch{return fail('JSON inválido.');}
- if(!payload||!actions.has(payload.acao))return fail('Ação inválida.');
- if(payload.acao!=='listar' && (!uuid.test(String(payload.empresa_id||''))))return fail('UUID da empresa inválido.');
- if(payload.acao==='recarga'){
-   if(!Number.isFinite(payload.valor_reais)||payload.valor_reais<=0||payload.valor_reais>1000000||Math.abs(Math.round(payload.valor_reais*100)-payload.valor_reais*100)>1e-6)return fail('Recarga deve ter valor positivo com até duas casas decimais.');
-   if(!uuid.test(String(payload.referencia||'')))return fail('Identificador da recarga inválido.');
- }
- try{
-  const res=await fetch(target,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-AV-Bridge-Secret':secret},body:JSON.stringify(payload),cache:'no-store'});
-  const data=await res.json().catch(()=>null);
-  if(!res.ok)return fail(`Gateway Vendas indisponível (HTTP ${res.status}).`,502);
-  const obj=data?.result??data;
-  if(!obj||typeof obj!=='object')return fail('Gateway não retornou JSON válido.',502);
-  if(obj.ok===false)return reply(obj,400);
-  return reply(obj);
- }catch{return fail('Não foi possível comunicar com o PostgreSQL via n8n.',502);}
+/* AV Admin SaaS -> N8N -> PostgreSQL (Cloudfy). Endpoint somente administrativo.
+ * Nao importa chaves OpenAI; nunca aciona pagamentos no provedor.
+ * Configure no Cloudflare: AV_OPENAI_WALLET_N8N_URL, AV_OPENAI_WALLET_BRIDGE_SECRET.
+ */
+const actions = new Set(['resumo','conferir_lastro','cadastrar','alocar','devolver','tarifa']);
+const send=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+export async function onRequestPost({request,env}) {
+  const supabaseUrl=String(env.AV_SUPABASE_URL||env.SUPABASE_URL||'').replace(/\/$/,'');
+  const supabaseAnon=env.AV_SUPABASE_PUBLISHABLE_KEY||env.SUPABASE_ANON_KEY;
+  const endpoint=String(env.AV_OPENAI_WALLET_N8N_URL||'');
+  const secret=String(env.AV_OPENAI_WALLET_BRIDGE_SECRET||'');
+  if (!supabaseUrl || !supabaseAnon || !endpoint || !secret || !/^https:\/\/[^/]+\/webhook\//i.test(endpoint))
+    return send({ok:false,erro:'Integração da carteira não configurada no Cloudflare.'},503);
+  const bearer=request.headers.get('Authorization')||'';
+  if (!/^Bearer\s+\S+$/i.test(bearer)) return send({ok:false,erro:'Sessão administrativa obrigatória.'},401);
+  let response;
+  try { response=await fetch(`${supabaseUrl}/auth/v1/user`,{headers:{apikey:supabaseAnon,Authorization:bearer},cache:'no-store'}); }
+  catch { return send({ok:false,erro:'Não foi possível validar o login.'},502); }
+  if (!response.ok) return send({ok:false,erro:'Sessão expirada.'},401);
+  let u;try {u=await response.json();}catch {return send({ok:false,erro:'Resposta inválida da autenticação.'},502);}
+  const email=String(u?.email||'').trim().toLowerCase();
+  if (!u?.id || !email || email!==String(env.AV_ADMIN_EMAIL||'avrep.tech@gmail.com').trim().toLowerCase())return send({ok:false,erro:'Acesso administrativo não autorizado.'},403);
+  let body;try {body=await request.json();}catch{return send({ok:false,erro:'JSON inválido.'},400);}
+  if (!body || !actions.has(body.acao))return send({ok:false,erro:'Ação não permitida.'},400);
+  if (JSON.stringify(body).length>5000)return send({ok:false,erro:'Conteúdo excede o limite.'},413);
+  if (['alocar','devolver'].includes(body.acao) && (!Number.isSafeInteger(body.valor_centavos)||body.valor_centavos<1||body.valor_centavos>100000000))
+    return send({ok:false,erro:'Valor deve estar em centavos inteiros e positivo.'},400);
+  if (['alocar','devolver','cadastrar'].includes(body.acao)){
+    if (!['juridico','agenda','vendas'].includes(body.crm) || typeof body.empresa_id!=='string' || body.empresa_id.length>160 || !body.empresa_id.trim())
+      return send({ok:false,erro:'Identificação de empresa inválida.'},400);
+  }
+  let upstream;try {
+    upstream=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-AV-Bridge-Secret':secret},body:JSON.stringify(body),cache:'no-store',redirect:'error'});
+  } catch {return send({ok:false,erro:'Não foi possível comunicar com a carteira via n8n.'},502);}
+  let result;try {result=await upstream.json();}catch{return send({ok:false,erro:'Gateway não retornou JSON.'},502);}
+  const data=result?.result??result;
+  if(!upstream.ok)return send({ok:false,erro:`Gateway indisponível (HTTP ${upstream.status}).`},502);
+  if(data?.ok===false)return send(data,400);
+  return send(data||{ok:false,erro:'Resposta vazia.'});
 }
-export function onRequestGet(){return fail('Use POST autenticado.',405);}
+export const onRequestGet=()=>send({ok:false,erro:'Use POST com autenticação administrativa.'},405);
