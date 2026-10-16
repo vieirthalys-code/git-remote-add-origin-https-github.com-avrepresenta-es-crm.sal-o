@@ -538,6 +538,7 @@
       usuario_nome: String(row.usuario_nome || ''),
       usuario_email: String(row.usuario_email || row.email || ''),
       teste_gratis_ate: row.teste_gratis_ate || null,
+      teste_gratis_produto: String(row.teste_gratis_produto || 'CRM_JURIDICO'),
       teste_ativo: Boolean(row.teste_ativo),
       dias_restantes: number(row.dias_restantes)
     })).filter(row => row.empresa_id);
@@ -583,6 +584,7 @@
         <div class="access-company-meta">
           <span><b>ID:</b> ${escapeHtml(row.empresa_id)}</span>
           <span><b>Plano:</b> ${escapeHtml(row.plano || '—')}</span>
+          ${row.teste_ativo ? `<span><b>Produto do teste:</b> ${row.teste_gratis_produto === 'CRM_JURIDICO_IA' ? 'CRM Jurídico + Agente de IA' : 'CRM Jurídico'}</span>` : ''}
           <span><b>Teste até:</b> ${row.teste_gratis_ate ? escapeHtml(dateOnly(row.teste_gratis_ate)) : '—'}</span>
         </div>
         <div class="access-company-actions">
@@ -960,6 +962,7 @@
     $('#trial-company-name').textContent = row.nome_fantasia || row.empresa_nome || 'Empresa';
     $('#trial-company-email').textContent = row.usuario_email || 'Sem e-mail vinculado';
     $('#trial-company-id').textContent = `empresa_id ${row.empresa_id}`;
+    $('#trial-product').value = row.teste_gratis_produto === 'CRM_JURIDICO_IA' ? 'CRM_JURIDICO_IA' : 'CRM_JURIDICO';
     $('#trial-end-date').value = row.teste_ativo && row.teste_gratis_ate ? String(row.teste_gratis_ate).slice(0,10) : addDaysIso(7);
     $('#trial-current-status').textContent = row.teste_ativo
       ? `Teste ativo até ${dateOnly(row.teste_gratis_ate)} · ${Math.max(0,number(row.dias_restantes))} dia(s) restante(s).`
@@ -979,16 +982,24 @@
     event.preventDefault();
     if (!trialTarget) { toast('Selecione uma empresa.', true); return; }
     const endDate = $('#trial-end-date').value;
+    const produto = $('#trial-product').value;
+    if (!['CRM_JURIDICO','CRM_JURIDICO_IA'].includes(produto)) { toast('Selecione o produto do teste grátis.', true); return; }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate)) { toast('Escolha uma data final válida.', true); return; }
     const button = $('#trial-save');
     button.disabled = true;
     const previous = button.textContent;
     button.textContent = 'Liberando...';
     try {
-      await api('teste-gratis',{acao:'definir',empresa_id:trialTarget.empresa_id,data_fim:endDate});
-      await loadTrialAccess({silent:true});
+      await api('teste-gratis',{acao:'definir',empresa_id:trialTarget.empresa_id,data_fim:endDate,produto});
+      const atualizadas = await loadTrialAccess({silent:true});
+      const confirmado = atualizadas.find(row => row.empresa_id === trialTarget.empresa_id);
+      if (!confirmado || !confirmado.teste_ativo ||
+          confirmado.teste_gratis_produto !== produto ||
+          String(confirmado.teste_gratis_ate || '').slice(0,10) !== endDate) {
+        throw new Error('O servidor não confirmou o produto e o prazo do teste. Verifique se o workflow de Teste Grátis por Plano está atualizado.');
+      }
       closeTrialDialog();
-      toast(`Teste grátis liberado até ${dateOnly(endDate)}.`);
+      toast(`Teste de ${produto === 'CRM_JURIDICO_IA' ? 'CRM Jurídico + Agente de IA' : 'CRM Jurídico'} liberado até ${dateOnly(endDate)}.`);
     } catch(error) {
       toast(error.message || 'Não foi possível liberar o teste.', true);
     } finally {
