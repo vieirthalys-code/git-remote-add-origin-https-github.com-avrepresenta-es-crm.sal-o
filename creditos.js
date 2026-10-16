@@ -846,7 +846,7 @@
       button.disabled = true;
       $('#agenda-prompt-company-meta').textContent = 'Nenhuma empresa selecionada.';
       $('#agenda-prompt-last-update').textContent = '—';
-      $('#agenda-prompt-count').textContent = '0 / 12.000 caracteres';
+      $('#agenda-prompt-count').textContent = '0 caracteres';
       return;
     }
     editor.value = company.prompt_sistema;
@@ -854,7 +854,7 @@
     button.disabled = false;
     $('#agenda-prompt-company-meta').textContent = `${company.empresa_nome} · empresa_id ${company.empresa_id}`;
     $('#agenda-prompt-last-update').textContent = company.updated_at ? `Última alteração: ${date(company.updated_at)}` : 'Nenhum prompt personalizado salvo.';
-    $('#agenda-prompt-count').textContent = `${fmt.format(editor.value.length)} / 12.000 caracteres`;
+    $('#agenda-prompt-count').textContent = `${fmt.format(editor.value.length)} caracteres`;
     if (status) status.textContent = `Empresa selecionada: ${company.empresa_nome}. ${company.prompt_sistema.trim() ? 'Prompt configurado.' : 'Prompt ainda não configurado.'}`;
   }
 
@@ -899,7 +899,7 @@
       $('#agenda-prompt-save-btn').disabled = true;
       $('#agenda-prompt-company-meta').textContent = 'Não foi possível carregar as empresas.';
       $('#agenda-prompt-last-update').textContent = '—';
-      $('#agenda-prompt-count').textContent = '0 / 12.000 caracteres';
+      $('#agenda-prompt-count').textContent = '0 caracteres';
       status.textContent = `Falha ao consultar o n8n: ${error.message}. Confira o workflow ADM AV — PROMPTS CRM AGENDA e o SQL de instalação.`;
       toast(error.message || 'Falha ao carregar prompts de agendamento.', true);
     } finally {
@@ -914,7 +914,6 @@
     if (!agendaPromptLoaded || !company) { toast('Selecione uma empresa válida do CRM de Agenda.',true); return; }
     const editor = $('#agenda-prompt-text');
     const prompt = editor.value.trim();
-    if (prompt.length > 12000) { toast('O prompt ultrapassa 12.000 caracteres.',true); return; }
     const saveButton = $('#agenda-prompt-save-btn');
     const selector = $('#agenda-company-select');
     saveButton.disabled = true;
@@ -1195,7 +1194,7 @@
     $('#agenda-prompts-refresh-btn').addEventListener('click',loadAgendaPrompts);
     $('#agenda-company-select').addEventListener('change',renderAgendaPromptCompany);
     $('#agenda-prompt-text').addEventListener('input',event=>{
-      $('#agenda-prompt-count').textContent = `${fmt.format(event.target.value.length)} / 12.000 caracteres`;
+      $('#agenda-prompt-count').textContent = `${fmt.format(event.target.value.length)} caracteres`;
     });
     $('#agenda-prompt-form').addEventListener('submit',saveAgendaPrompt);
     $('#crm-module-tabs').addEventListener('click',e=>{
