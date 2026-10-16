@@ -742,8 +742,8 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/creditos.js?v=20261015-prompt-sem-limite"></script>
-  <script src="./js/vendas-admin.js?v=20261015-prompt-sem-limite" defer></script>
+  <script src="./js/creditos.js?v=20261013-agenda-admin"></script>
+  <script src="./js/vendas-admin.js?v=20261013-carteira-v2" defer></script>
 
 
 <script id="av-central-isolado-v35">
@@ -909,21 +909,26 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
       if(crm==='juridico') result=await ia('configuracao',{empresa_id:Number(id),provedor:'OPENAI',prompt_sistema:prompt.trim()});
       else if(crm==='agenda')result=await admin('agenda-prompts/salvar',{empresa_id:id,prompt_sistema:prompt.trim()});
       else result=await vendas('prompt',{empresa_id:id,prompt_sistema:prompt,agente_ativo:Boolean(row.raw?.config?.agente_ativo)});
-      if(result?.ok===false)throw new Error(result?.error||result?.erro||'Erro de gravação');
-      let confirmedPrompt=String(result?.prompt_sistema??prompt.trim());
-      if(crm==='juridico'){
-        // Nao considerar HTTP 200 como comprovante de gravacao: ler de volta o valor persistido.
-        const check=await ia('listar',{});
-        const stored=normalizePrompts(check).get(String(id));
-        if(stored!==prompt.trim()){
-          throw new Error('A API respondeu, mas nao confirmou a gravacao do prompt OPENAI. Consulte a execucao do n8n e o registro no PostgreSQL; o texto anterior foi preservado.');
+      if(crm==='juridico') {
+        // O n8n responde com um array de linhas; não presumir sucesso apenas por HTTP 200.
+        const saved=Array.isArray(result)?result[0]:result;
+        if(saved?.ok!==true || String(saved.empresa_id)!==id ||
+           String(saved.provedor||'').toUpperCase()!=='OPENAI' ||
+           String(saved.prompt_sistema??'')!==prompt.trim()) {
+          throw new Error(saved?.erro||saved?.error||'O banco não confirmou a gravação do prompt OPENAI.');
         }
-        confirmedPrompt=stored;
+        const persisted=normalizePrompts(await ia('listar',{})).get(id);
+        if(persisted!==prompt.trim()) {
+          throw new Error('O n8n confirmou a atualização, mas a releitura do prompt OPENAI não corresponde ao texto enviado.');
+        }
+        row.prompt=persisted;
+      } else {
+        if(result?.ok===false)throw new Error(result?.error||result?.erro||'Erro de gravação');
+        row.prompt=String(result?.prompt_sistema??prompt.trim());
       }
-      row.prompt=confirmedPrompt;
       if(row.raw?.config)row.raw.config.prompt_sistema=row.prompt;
       state.dirty=false;input.value=row.prompt;renderCount();
-      status('Prompt salvo com confirmação da API para '+row.name+'.','success');
+      status('Prompt salvo e confirmado após releitura para '+row.name+'.','success');
     }catch(e){status('O prompt NÃO foi confirmado pelo servidor: '+errorMessage(e),'error');}
     finally{state.saving=false;choice.disabled=false;btn.disabled=false;saveBtn.disabled=false;}
   }

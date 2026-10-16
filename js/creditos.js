@@ -476,18 +476,18 @@
       if (typeof value !== 'object') return;
       const empresaId = value.empresa_id ?? value.id_empresa ?? value.empresa?.id;
       const provedor = String(value.provedor || value.provider || '').toUpperCase();
-      if (empresaId && provedor === 'GEMINI') {
+      if (empresaId && provedor === 'OPENAI') {
         out.push({
           empresa_id:Number(empresaId),
-          provedor:'GEMINI',
+          provedor:'OPENAI',
           prompt_sistema:String(value.prompt_sistema ?? value.prompt ?? '')
         });
       }
-      if (value.gemini && empresaId) {
+      if (value.openai && empresaId) {
         out.push({
           empresa_id:Number(empresaId),
-          provedor:'GEMINI',
-          prompt_sistema:String(value.gemini.prompt_sistema ?? value.gemini.prompt ?? '')
+          provedor:'OPENAI',
+          prompt_sistema:String(value.openai.prompt_sistema ?? value.openai.prompt ?? '')
         });
       }
       ['provedores','providers','ias','configuracoes','dados','data','empresas','resultados','rows'].forEach(k => {
@@ -815,13 +815,22 @@
     const button = $('#prompt-save-btn');
     button.disabled = true;
     try {
-      await iaApi('configuracao',{empresa_id,provedor:'GEMINI',prompt_sistema});
-      const existing = promptRows.find(r => String(r.empresa_id)===String(empresa_id));
-      if (existing) existing.prompt_sistema = prompt_sistema;
-      else promptRows.push({empresa_id,provedor:'GEMINI',prompt_sistema});
+      const response = await iaApi('configuracao',{empresa_id,provedor:'OPENAI',prompt_sistema});
+      const saved = Array.isArray(response) ? response[0] : response;
+      if (saved?.ok !== true || Number(saved.empresa_id) !== empresa_id ||
+          String(saved.provedor || '').toUpperCase() !== 'OPENAI' ||
+          String(saved.prompt_sistema ?? '') !== prompt_sistema) {
+        throw new Error(saved?.erro || 'O banco não confirmou a gravação do prompt OPENAI.');
+      }
+      const persistedRows = normalizePromptRows(await iaApi('listar',{}));
+      const persisted = persistedRows.find(r => Number(r.empresa_id) === empresa_id);
+      if (!persisted || persisted.prompt_sistema !== prompt_sistema) {
+        throw new Error('A releitura do prompt OPENAI não confirmou o texto salvo.');
+      }
+      promptRows = persistedRows;
       renderStats();
       renderCompanyLists();
-      toast('Prompt do Gemini salvo para esta empresa.');
+      toast('Prompt OpenAI salvo e confirmado após releitura.');
     } catch(error) { toast(error.message,true); }
     finally { button.disabled = false; }
   }
