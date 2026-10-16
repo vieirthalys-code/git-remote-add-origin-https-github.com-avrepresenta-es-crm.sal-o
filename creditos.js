@@ -476,18 +476,18 @@
       if (typeof value !== 'object') return;
       const empresaId = value.empresa_id ?? value.id_empresa ?? value.empresa?.id;
       const provedor = String(value.provedor || value.provider || '').toUpperCase();
-      if (empresaId && provedor === 'GEMINI') {
+      if (empresaId && provedor === 'OPENAI') {
         out.push({
           empresa_id:Number(empresaId),
-          provedor:'GEMINI',
+          provedor:'OPENAI',
           prompt_sistema:String(value.prompt_sistema ?? value.prompt ?? '')
         });
       }
-      if (value.gemini && empresaId) {
+      if (value.openai && empresaId) {
         out.push({
           empresa_id:Number(empresaId),
-          provedor:'GEMINI',
-          prompt_sistema:String(value.gemini.prompt_sistema ?? value.gemini.prompt ?? '')
+          provedor:'OPENAI',
+          prompt_sistema:String(value.openai.prompt_sistema ?? value.openai.prompt ?? '')
         });
       }
       ['provedores','providers','ias','configuracoes','dados','data','empresas','resultados','rows'].forEach(k => {
@@ -538,6 +538,7 @@
       usuario_nome: String(row.usuario_nome || ''),
       usuario_email: String(row.usuario_email || row.email || ''),
       teste_gratis_ate: row.teste_gratis_ate || null,
+      teste_gratis_produto: String(row.teste_gratis_produto || 'CRM_JURIDICO'),
       teste_ativo: Boolean(row.teste_ativo),
       dias_restantes: number(row.dias_restantes)
     })).filter(row => row.empresa_id);
@@ -583,6 +584,7 @@
         <div class="access-company-meta">
           <span><b>ID:</b> ${escapeHtml(row.empresa_id)}</span>
           <span><b>Plano:</b> ${escapeHtml(row.plano || '—')}</span>
+          ${row.teste_ativo ? `<span><b>Produto do teste:</b> ${row.teste_gratis_produto === 'CRM_JURIDICO_IA' ? 'CRM Jurídico + Agente de IA' : 'CRM Jurídico'}</span>` : ''}
           <span><b>Teste até:</b> ${row.teste_gratis_ate ? escapeHtml(dateOnly(row.teste_gratis_ate)) : '—'}</span>
         </div>
         <div class="access-company-actions">
@@ -756,7 +758,6 @@
     const p = provider === 'openai' ? 'openai' : 'google';
     const ok = Boolean(data?.ok);
     const status = $(`#${p}-status`);
-    if (!status) return; // Provedor removido da interface (ex.: Google); não acessar elementos inexistentes.
     status.textContent = ok ? 'Conectado' : (data?.configured === false ? 'Não configurado' : 'Indisponível');
     status.classList.toggle('on',ok);
     status.classList.toggle('off',!ok);
@@ -794,8 +795,7 @@
     $('#ia-company-select').value = String(companyId);
     $('#prompt-company-meta').textContent = `${company.empresa_nome} · empresa_id ${company.empresa_id}`;
     $('#prompt-gemini').value = promptFor(companyId);
-    const googleLink = $('#google-connect-link');
-    if (googleLink) googleLink.href = `/api/google/oauth/start?empresa_id=${encodeURIComponent(companyId)}`;
+    $('#google-connect-link').href = `/api/google/oauth/start?empresa_id=${encodeURIComponent(companyId)}`;
     showSection('ia-empresa');
     await loadProviderBilling(companyId);
   }
@@ -817,13 +817,22 @@
     const button = $('#prompt-save-btn');
     button.disabled = true;
     try {
-      await iaApi('configuracao',{empresa_id,provedor:'GEMINI',prompt_sistema});
-      const existing = promptRows.find(r => String(r.empresa_id)===String(empresa_id));
-      if (existing) existing.prompt_sistema = prompt_sistema;
-      else promptRows.push({empresa_id,provedor:'GEMINI',prompt_sistema});
+      const response = await iaApi('configuracao',{empresa_id,provedor:'OPENAI',prompt_sistema});
+      const saved = Array.isArray(response) ? response[0] : response;
+      if (saved?.ok !== true || Number(saved.empresa_id) !== empresa_id ||
+          String(saved.provedor || '').toUpperCase() !== 'OPENAI' ||
+          String(saved.prompt_sistema ?? '') !== prompt_sistema) {
+        throw new Error(saved?.erro || 'O banco não confirmou a gravação do prompt OPENAI.');
+      }
+      const persistedRows = normalizePromptRows(await iaApi('listar',{}));
+      const persisted = persistedRows.find(r => Number(r.empresa_id) === empresa_id);
+      if (!persisted || persisted.prompt_sistema !== prompt_sistema) {
+        throw new Error('A releitura do prompt OPENAI não confirmou o texto salvo.');
+      }
+      promptRows = persistedRows;
       renderStats();
       renderCompanyLists();
-      toast('Prompt do Gemini salvo para esta empresa.');
+      toast('Prompt OpenAI salvo e confirmado após releitura.');
     } catch(error) { toast(error.message,true); }
     finally { button.disabled = false; }
   }
@@ -846,7 +855,7 @@
       button.disabled = true;
       $('#agenda-prompt-company-meta').textContent = 'Nenhuma empresa selecionada.';
       $('#agenda-prompt-last-update').textContent = '—';
-      $('#agenda-prompt-count').textContent = '0 caracteres';
+      $('#agenda-prompt-count').textContent = '0 / 12.000 caracteres';
       return;
     }
     editor.value = company.prompt_sistema;
@@ -854,7 +863,7 @@
     button.disabled = false;
     $('#agenda-prompt-company-meta').textContent = `${company.empresa_nome} · empresa_id ${company.empresa_id}`;
     $('#agenda-prompt-last-update').textContent = company.updated_at ? `Última alteração: ${date(company.updated_at)}` : 'Nenhum prompt personalizado salvo.';
-    $('#agenda-prompt-count').textContent = `${fmt.format(editor.value.length)} caracteres`;
+    $('#agenda-prompt-count').textContent = `${fmt.format(editor.value.length)} / 12.000 caracteres`;
     if (status) status.textContent = `Empresa selecionada: ${company.empresa_nome}. ${company.prompt_sistema.trim() ? 'Prompt configurado.' : 'Prompt ainda não configurado.'}`;
   }
 
@@ -899,7 +908,7 @@
       $('#agenda-prompt-save-btn').disabled = true;
       $('#agenda-prompt-company-meta').textContent = 'Não foi possível carregar as empresas.';
       $('#agenda-prompt-last-update').textContent = '—';
-      $('#agenda-prompt-count').textContent = '0 caracteres';
+      $('#agenda-prompt-count').textContent = '0 / 12.000 caracteres';
       status.textContent = `Falha ao consultar o n8n: ${error.message}. Confira o workflow ADM AV — PROMPTS CRM AGENDA e o SQL de instalação.`;
       toast(error.message || 'Falha ao carregar prompts de agendamento.', true);
     } finally {
@@ -914,6 +923,7 @@
     if (!agendaPromptLoaded || !company) { toast('Selecione uma empresa válida do CRM de Agenda.',true); return; }
     const editor = $('#agenda-prompt-text');
     const prompt = editor.value.trim();
+    if (prompt.length > 12000) { toast('O prompt ultrapassa 12.000 caracteres.',true); return; }
     const saveButton = $('#agenda-prompt-save-btn');
     const selector = $('#agenda-company-select');
     saveButton.disabled = true;
@@ -952,6 +962,7 @@
     $('#trial-company-name').textContent = row.nome_fantasia || row.empresa_nome || 'Empresa';
     $('#trial-company-email').textContent = row.usuario_email || 'Sem e-mail vinculado';
     $('#trial-company-id').textContent = `empresa_id ${row.empresa_id}`;
+    $('#trial-product').value = row.teste_gratis_produto === 'CRM_JURIDICO_IA' ? 'CRM_JURIDICO_IA' : 'CRM_JURIDICO';
     $('#trial-end-date').value = row.teste_ativo && row.teste_gratis_ate ? String(row.teste_gratis_ate).slice(0,10) : addDaysIso(7);
     $('#trial-current-status').textContent = row.teste_ativo
       ? `Teste ativo até ${dateOnly(row.teste_gratis_ate)} · ${Math.max(0,number(row.dias_restantes))} dia(s) restante(s).`
@@ -971,16 +982,24 @@
     event.preventDefault();
     if (!trialTarget) { toast('Selecione uma empresa.', true); return; }
     const endDate = $('#trial-end-date').value;
+    const produto = $('#trial-product').value;
+    if (!['CRM_JURIDICO','CRM_JURIDICO_IA'].includes(produto)) { toast('Selecione o produto do teste grátis.', true); return; }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate)) { toast('Escolha uma data final válida.', true); return; }
     const button = $('#trial-save');
     button.disabled = true;
     const previous = button.textContent;
     button.textContent = 'Liberando...';
     try {
-      await api('teste-gratis',{acao:'definir',empresa_id:trialTarget.empresa_id,data_fim:endDate});
-      await loadTrialAccess({silent:true});
+      await api('teste-gratis',{acao:'definir',empresa_id:trialTarget.empresa_id,data_fim:endDate,produto});
+      const atualizadas = await loadTrialAccess({silent:true});
+      const confirmado = atualizadas.find(row => row.empresa_id === trialTarget.empresa_id);
+      if (!confirmado || !confirmado.teste_ativo ||
+          confirmado.teste_gratis_produto !== produto ||
+          String(confirmado.teste_gratis_ate || '').slice(0,10) !== endDate) {
+        throw new Error('O servidor não confirmou o produto e o prazo do teste. Verifique se o workflow de Teste Grátis por Plano está atualizado.');
+      }
       closeTrialDialog();
-      toast(`Teste grátis liberado até ${dateOnly(endDate)}.`);
+      toast(`Teste de ${produto === 'CRM_JURIDICO_IA' ? 'CRM Jurídico + Agente de IA' : 'CRM Jurídico'} liberado até ${dateOnly(endDate)}.`);
     } catch(error) {
       toast(error.message || 'Não foi possível liberar o teste.', true);
     } finally {
@@ -1194,7 +1213,7 @@
     $('#agenda-prompts-refresh-btn').addEventListener('click',loadAgendaPrompts);
     $('#agenda-company-select').addEventListener('change',renderAgendaPromptCompany);
     $('#agenda-prompt-text').addEventListener('input',event=>{
-      $('#agenda-prompt-count').textContent = `${fmt.format(event.target.value.length)} caracteres`;
+      $('#agenda-prompt-count').textContent = `${fmt.format(event.target.value.length)} / 12.000 caracteres`;
     });
     $('#agenda-prompt-form').addEventListener('submit',saveAgendaPrompt);
     $('#crm-module-tabs').addEventListener('click',e=>{
@@ -1317,8 +1336,7 @@
       $('#ia-company-select').value = String(firstId);
       $('#prompt-company-meta').textContent = `${empresas[0].empresa_nome} · empresa_id ${firstId}`;
       $('#prompt-gemini').value = promptFor(firstId);
-      const googleLink = $('#google-connect-link');
-      if (googleLink) googleLink.href = `/api/google/oauth/start?empresa_id=${encodeURIComponent(firstId)}`;
+      $('#google-connect-link').href = `/api/google/oauth/start?empresa_id=${encodeURIComponent(firstId)}`;
 
       if(initial==='ia-empresa') {
         await openIaCompany($('#ia-company-select').value);

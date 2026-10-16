@@ -658,6 +658,12 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
     </div>
 
     <form id="trial-form">
+      <label for="trial-product">Produto liberado durante o teste grátis
+        <select id="trial-product" class="input" required>
+          <option value="CRM_JURIDICO">CRM Jurídico — somente o CRM</option>
+          <option value="CRM_JURIDICO_IA">CRM Jurídico + Agente de IA — inclui WhatsApp</option>
+        </select>
+      </label>
       <label>Escolha um período rápido</label>
       <div class="trial-quick-grid" role="group" aria-label="Períodos de teste">
         <button type="button" class="trial-quick-btn" data-trial-days="3">3 dias</button>
@@ -742,7 +748,7 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/creditos.js?v=20261013-agenda-admin"></script>
+  <script src="./js/creditos.js?v=20261016-trial-plano"></script>
   <script src="./js/vendas-admin.js?v=20261013-carteira-v2" defer></script>
 
 
