@@ -1,0 +1,34 @@
+
+#crm-vendas .avv-layout{display:grid;grid-template-columns:minmax(230px, .85fr) minmax(0,1.45fr);gap:20px;align-items:start;margin-top:18px}
+#crm-vendas .avv-toolbar{margin-top:18px}#crm-vendas .avv-toolbar input{width:100%}
+#crm-vendas .avv-status{margin-top:12px;color:var(--text-muted,#64748b);padding:12px 14px;background:rgba(113,128,150,.08);border-radius:12px;font-size:13px}
+#crm-vendas .avv-status.error{color:#b91c1c;background:#fef2f2}
+#crm-vendas .avv-list{display:grid;gap:10px;max-height:730px;overflow-y:auto}
+#crm-vendas .avv-company{border:1px solid rgba(112,124,140,.22);background:var(--card-bg,#fff);border-radius:14px;padding:14px 15px;text-align:left;cursor:pointer;color:inherit;display:flex;flex-direction:column;gap:7px;min-width:0}
+#crm-vendas .avv-company.selected{border-color:#f97316;box-shadow:0 0 0 1px #f97316}#crm-vendas .avv-company strong{font-size:14px;overflow-wrap:anywhere}#crm-vendas .avv-company small{font-size:11px;color:#64748b;overflow-wrap:anywhere}
+#crm-vendas .avv-chip{display:inline-flex;width:fit-content;align-items:center;border-radius:999px;background:#fff7ed;color:#9a3412;padding:4px 9px;font-size:11px;font-weight:600}
+#crm-vendas .avv-chip.off{background:#f1f5f9;color:#475569}#crm-vendas .avv-tags{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+#crm-vendas .avv-editor{background:var(--card-bg,#fff);border:1px solid rgba(112,124,140,.22);padding:20px;border-radius:16px;min-width:0}
+#crm-vendas .avv-editor[hidden]{display:none}#crm-vendas .avv-editor h3{margin:0 0 5px}#crm-vendas .avv-sub{font-size:11px;color:#64748b;overflow-wrap:anywhere}
+#crm-vendas .avv-block{padding:16px 0;border-top:1px solid rgba(112,124,140,.17);display:grid;gap:10px}#crm-vendas .avv-block h4{margin:0}#crm-vendas .avv-block p,#crm-vendas .avv-block small{margin:0;color:#64748b;font-size:12px;line-height:1.5}
+#crm-vendas .avv-check{display:flex;align-items:center;gap:10px;font-size:13px}#crm-vendas .avv-check input{width:17px;height:17px;accent-color:#f97316}
+#crm-vendas .avv-actions{display:flex;gap:8px;flex-wrap:wrap}#crm-vendas .avv-editor-footer{display:flex;justify-content:space-between;align-items:center;gap:12px}#crm-vendas .avv-block textarea{width:100%;min-height:190px;resize:vertical}
+#crm-vendas .avv-editor button:disabled{opacity:.6;cursor:wait}
+@media(max-width:950px){#crm-vendas .avv-layout{grid-template-columns:1fr}#crm-vendas .avv-list{max-height:300px}}@media(max-width:540px){#crm-vendas .avv-editor{padding:14px}#crm-vendas .avv-editor-footer{align-items:flex-start;flex-direction:column}}
+/* Carteira IA por empresa — acompanha paleta já existente */
+#crm-vendas .avv-credit-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+#crm-vendas .avv-credit-amount{padding:20px;border:1px solid #fed7aa;border-radius:16px;background:linear-gradient(115deg,#fff7ed,#ffffff);display:grid;gap:6px}
+#crm-vendas .avv-credit-amount span{font-size:12px;color:#7c2d12}
+#crm-vendas .avv-credit-amount strong{font-size:clamp(26px,3vw,36px);font-weight:650;color:#9a3412;letter-spacing:-.04em}
+#crm-vendas .avv-credit-amount small{color:#64748b;font-size:11px}
+#crm-vendas .avv-credit-actions{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+#crm-vendas .avv-credit-actions label{width:100%;font-size:12px}
+#crm-vendas .avv-credit-actions input{width:170px;min-width:0}
+#crm-vendas .avv-credit-status{font-size:12px;color:#475569;min-height:16px}
+#crm-vendas .avv-credit-status.error{color:#b91c1c}
+#crm-vendas .avv-transactions{display:grid;gap:8px;max-height:300px;overflow:auto}
+#crm-vendas .avv-transaction{display:flex;gap:12px;align-items:start;justify-content:space-between;border:1px solid #e2e8f0;border-radius:12px;padding:11px;min-width:0}
+#crm-vendas .avv-transaction span{display:block;color:#64748b;font-size:11px;overflow-wrap:anywhere}
+#crm-vendas .avv-transaction strong{font-weight:600;white-space:nowrap}
+#crm-vendas .avv-credit-link{font-size:12px;color:#c2410c;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:540px){#crm-vendas .avv-credit-actions{flex-direction:column;align-items:stretch}#crm-vendas .avv-credit-actions input{width:100%}}

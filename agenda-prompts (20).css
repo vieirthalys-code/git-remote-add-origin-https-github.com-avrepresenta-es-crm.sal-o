@@ -1,0 +1,12 @@
+/* Somente a nova seção de prompts; não altera os demais módulos. */
+#prompts-agenda .agenda-prompt-head {align-items: flex-start; gap: 16px; flex-wrap: wrap;}
+#prompts-agenda .agenda-prompt-form {display: grid; gap: 18px; margin-top: 20px;}
+#prompts-agenda .agenda-prompt-field {display: grid; gap: 10px; width: 100%; font-weight: 650; color: inherit;}
+#prompts-agenda .agenda-prompt-field select,
+#prompts-agenda .agenda-prompt-field textarea {width: 100%; box-sizing: border-box;}
+#prompts-agenda .agenda-prompt-field textarea {min-height: 260px; resize: vertical; font-size: 1rem; line-height: 1.55;}
+#prompts-agenda .agenda-prompt-information {display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; color: var(--muted, #64748b); font-size: .94rem;}
+#prompts-agenda .agenda-prompt-status {border: 1px solid #e8e9ed; background: #f7f8fa; color: #273142; border-radius: 12px; padding: 12px 14px; line-height: 1.45; margin-top: 18px;}
+#prompts-agenda .agenda-prompt-actions {display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;}
+#prompts-agenda .agenda-prompt-count {font-size: .9rem; color: #667085;}
+@media(max-width: 600px){#prompts-agenda .agenda-prompt-head button,#prompts-agenda .agenda-prompt-actions button {width:100%} #prompts-agenda .agenda-prompt-actions {align-items:stretch}}
