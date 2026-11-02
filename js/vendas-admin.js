@@ -140,3 +140,12 @@
     setTimeout(reload,250);
   }
 })();
+
+/* AV360 | carrega extensão aditiva de planos e mensalidades sem alterar o painel legado */
+(() => {
+  if (!document.getElementById('crm-vendas') || document.querySelector('script[data-av360-comercial]')) return;
+  const module = document.createElement('script');
+  module.setAttribute('data-av360-comercial','1');
+  module.src = '/js/av360-comercial.js?v=20261102';
+  document.head.appendChild(module);
+})();
