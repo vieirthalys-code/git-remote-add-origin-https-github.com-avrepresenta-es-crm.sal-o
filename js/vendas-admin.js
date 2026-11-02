@@ -146,6 +146,13 @@
   if (!document.getElementById('crm-vendas') || document.querySelector('script[data-av360-comercial]')) return;
   const module = document.createElement('script');
   module.setAttribute('data-av360-comercial','1');
-  module.src = '/js/av360-comercial.js?v=20261102';
+  module.src = '/js/av360-comercial.js?v=20261102-contrato';
+  module.onload = () => {
+    if (document.querySelector('script[data-av360-carteira]')) return;
+    const wallet = document.createElement('script');
+    wallet.setAttribute('data-av360-carteira','1');
+    wallet.src = '/js/av360-carteira-openai.js?v=20261102';
+    document.head.appendChild(wallet);
+  };
   document.head.appendChild(module);
 })();
