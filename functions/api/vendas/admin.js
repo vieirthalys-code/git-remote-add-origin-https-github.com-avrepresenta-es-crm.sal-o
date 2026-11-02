@@ -3,7 +3,7 @@
    Secret do n8n jamais é enviado ao navegador. */
 function reply(payload,status=200){return new Response(JSON.stringify(payload),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}
 const fail=(error,status=400)=>reply({ok:false,error},status);
-const actions=new Set(['listar','saldo','recarga','politica','teste','encerrar_teste','prompt','comercial']);
+const actions=new Set(['listar','saldo','recarga','politica','teste','encerrar_teste','prompt','comercial','contrato']);
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export async function onRequestPost({request,env}){
  const url=String(env.AV_SUPABASE_URL||env.SUPABASE_URL||'').replace(/\/$/,'');

@@ -21,13 +21,14 @@
   const form=document.createElement('form');
   form.id='av360-form';form.className='av360-form';
   form.innerHTML='<h4>Plano e mensalidade por empresa</h4>'+
-    '<p>Configure planos e valores do CRM Vendas 360. Não gera cobranças no Asaas e não altera contratos.</p>'+
+    '<p>Defina o contrato a oferecer, WhatsApp, agente de IA e mensalidade. Não cria assinatura nem cobrança automática. A modalidade escolhida altera as permissões da empresa ao salvar.</p>'+
     '<div class="av360-fields">'+
+    '<label>Modalidade comercial / contrato<select class="input" id="av360-mode"><option value="NAO_DEFINIDO">Selecione o contrato</option><option value="CRM_SEM_IA">CRM básico, sem WhatsApp e sem IA</option><option value="CRM_WHATSAPP_SEM_IA">CRM + WhatsApp, sem agente IA</option><option value="CRM_WHATSAPP_COM_IA">CRM + WhatsApp e agente IA</option></select></label>'+
     '<label>Plano<select class="input" id="av360-plan"><option value="">Escolha uma empresa</option></select></label>'+
     '<label>Mensalidade personalizada (R$)<input class="input" id="av360-price" inputmode="decimal" maxlength="15" placeholder="Vazio = valor padrão" autocomplete="off"></label>'+
     '<label>Observação comercial<input class="input" id="av360-note" maxlength="2000" placeholder="Opcional" autocomplete="off"></label>'+
     '</div><p id="av360-total" class="av360-total">Selecione uma empresa.</p>'+
-    '<button id="av360-save" type="submit" class="btn btn-primary" disabled>Salvar plano e mensalidade</button>'+
+    '<button id="av360-save" type="submit" class="btn btn-primary" disabled>Salvar modalidade e mensalidade</button>'+
     '<p id="av360-message" class="av360-message" role="status" aria-live="polite"></p>';
   prompt.before(form);
   const trialActions=el('avv-trial-text')?.closest('.avv-block')?.querySelector('.avv-actions');
@@ -63,6 +64,9 @@
       select.add(new Option('Sem plano definido',''));
       for(const p of Array.isArray(data.planos)?data.planos:[])select.add(new Option(String(p.nome||p.codigo),String(p.codigo)));
       select.value=com.plano_codigo||'';
+      select.disabled=true; // Plano calculado a partir da modalidade e bloqueado para evitar conflito
+      const m=com.modalidade||'NAO_DEFINIDO';
+      el('av360-mode').value=['CRM_SEM_IA','CRM_WHATSAPP_SEM_IA','CRM_WHATSAPP_COM_IA'].includes(m)?m:'NAO_DEFINIDO';
       el('av360-price').value=com.mensalidade_personalizada??'';
       el('av360-note').value=com.observacao||'';
       el('av360-total').textContent=com.mensalidade_efetiva==null?'Mensalidade atual: não definida':'Mensalidade atual: '+brl.format(Number(com.mensalidade_efetiva));
@@ -70,6 +74,10 @@
       disable(false);
     }catch(e){if(ticket===seq)message(e.message||'Não foi possível carregar.',true);}
   }
+  el('av360-mode').addEventListener('change',()=>{
+    const m=el('av360-mode').value;
+    el('av360-plan').value=m==='CRM_SEM_IA'?'crm_basico':m==='NAO_DEFINIDO'?'':'crm_whatsapp';
+  });
   form.addEventListener('submit',async e=>{
     e.preventDefault();if(busy)return;
     const tenant=id();if(!tenant)return message('Selecione uma empresa.',true);
@@ -77,12 +85,15 @@
     if(raw&&!/^(?:0|[1-9][0-9]{0,9})(?:\.[0-9]{1,2})?$/.test(raw))return message('Use um valor válido com até duas casas decimais.',true);
     const amount=raw===''?null:Number(raw);
     if(amount!==null&&(!Number.isFinite(amount)||amount>9999999999.99))return message('Valor inválido.',true);
-    busy=true;disable(true);message('Gravando plano e mensalidade...');
+    const modalidade=el('av360-mode').value;
+    if(!['CRM_SEM_IA','CRM_WHATSAPP_SEM_IA','CRM_WHATSAPP_COM_IA'].includes(modalidade))return message('Escolha um contrato antes de salvar.',true);
+    if(!window.confirm('Alterar as permissões de WhatsApp e agente IA da empresa selecionada conforme este contrato?'))return;
+    busy=true;disable(true);message('Gravando contrato comercial e permissões...');
     try{
-      await api('comercial',{empresa_id:tenant,plano_codigo:el('av360-plan').value||null,mensalidade_personalizada:amount,observacao:el('av360-note').value});
+      await api('contrato',{empresa_id:tenant,modalidade,mensalidade_personalizada:amount,observacao:el('av360-note').value});
       if(id()!==tenant)return;
       await load();
-      message('Plano e mensalidade registrados. Nenhuma cobrança foi gerada.');
+      message('Modalidade de CRM/WhatsApp/IA e mensalidade registradas. Nenhuma cobrança foi gerada.');
     }catch(error){message(error.message||'Erro ao salvar.',true);}
     finally{busy=false;if(id()===tenant)disable(false);}
   });
