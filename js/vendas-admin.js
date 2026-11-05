@@ -10,6 +10,7 @@
   function isTrial(c) { return typeof c?.trial_ativo === 'boolean' ? c.trial_ativo : Boolean(c?.config?.teste_gratis_ate && new Date(c.config.teste_gratis_ate)>new Date()); }
   function allowed(c) { return typeof c?.acesso_real === 'boolean' ? c.acesso_real : Boolean(c?.config?.acesso_manual_ativo || isTrial(c)); }
   const getSelected = () => companies.find(c => c.id === selected);
+  const linkedTrial = c => Boolean(c && !c.conta_mestre && c.admin_login_email && c.asaas_customer_id);
   const brl = n => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n||0));
   const precise = n => new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:6}).format(Number(n||0));
   function setCreditStatus(message,error=false){const el=$('avv-credit-status');if(!el)return;el.textContent=message;el.classList.toggle('error',error);}
@@ -46,6 +47,50 @@
     if (!response.ok || data?.ok === false) throw new Error(data?.error || `Não foi possível acessar o módulo Vendas (HTTP ${response.status}).`);
     return data;
   }
+
+  async function apiTrial(acao,empresa,dias=null) {
+    const token=await window.AV_ADMIN_AUTH?.getToken?.();
+    if(!token)throw new Error('Entre novamente no Painel Administrativo AV.');
+    const res=await fetch('/api/vendas/teste-painel',{
+      method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+      cache:'no-store',credentials:'same-origin',
+      body:JSON.stringify({
+        acao,empresa_id:empresa.id,dias,
+        email_login:empresa.admin_login_email,
+        asaas_customer_id:empresa.asaas_customer_id,
+        confirmacao:acao==='iniciar'?'LIBERAR_TESTE_ADMIN_AV':'ENCERRAR_TESTE_ADMIN_AV'
+      })
+    });
+    const data=await res.json().catch(()=>null);
+    if(!res.ok||data?.ok!==true)throw new Error(data?.error||'O servidor não autorizou a alteração do teste.');
+    return data;
+  }
+  async function runTrial(acao,dias=null){
+    const empresa=getSelected();if(!empresa)return;
+    if(!linkedTrial(empresa)){
+      feedback('Para liberar testes é necessário um administrador com login Supabase e um cliente Asaas de produção vinculado. A conta mestre não pode receber teste.',true);return;
+    }
+    if(acao==='iniciar'&&isTrial(empresa)){
+      feedback('Já existe um teste vigente. Encerre-o antes de iniciar outro.',true);return;
+    }
+    if(acao==='encerrar'&&!isTrial(empresa)){
+      feedback('Esta empresa não possui teste vigente para encerrar.',true);return;
+    }
+    const mensagem=acao==='iniciar'
+      ? 'LIBERAR '+dias+' dia(s) de teste para '+empresa.nome+'?\\n\\nLogin: '+empresa.admin_login_email+'\\nAsaas: '+empresa.asaas_customer_id+'\\n\\nO período começa AGORA. Não cria cobrança, não registra pagamento e não adiciona créditos OpenAI.'
+      : 'ENCERRAR AGORA o teste de '+empresa.nome+'?\\n\\nO acesso ao CRM e ao WhatsApp será bloqueado, salvo quando existir outro direito de acesso válido.';
+    if(!window.confirm(mensagem))return;
+    const buttons=[...$('avv-editor').querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);
+    feedback(acao==='iniciar'?'Liberando teste temporário pelo servidor...':'Encerrando teste pelo servidor...');
+    try{
+      const res=await apiTrial(acao,empresa,dias);
+      await reload(empresa.id);
+      feedback(acao==='iniciar'
+        ? 'Teste liberado no painel até '+until(res.teste_ate)+'. O login usa a senha já cadastrada, sem alterar o Asaas.'
+        : 'Teste encerrado pelo Painel AV. O acesso está sujeito às demais permissões vigentes.');
+    }catch(e){feedback(e.message,true);}
+    finally{buttons.forEach(b=>b.disabled=false);}
+  }
   function renderList() {
     const q = $('avv-search').value.trim().toLocaleLowerCase('pt-BR');
     const matches = companies.filter(c => !q || `${c.nome} ${c.id}`.toLocaleLowerCase('pt-BR').includes(q));
@@ -67,7 +112,11 @@
     $('avv-agent').checked = Boolean(c.config?.agente_ativo);
     $('avv-prompt').value = String(c.config?.prompt_sistema || '');
     $('avv-count').textContent = `${$('avv-prompt').value.length.toLocaleString('pt-BR')} / 12.000 caracteres`;
-    $('avv-trial-text').textContent = `${isTrial(c) ? 'Teste em andamento' : 'Sem teste ativo'} · ${until(c.config?.teste_gratis_ate)}`;
+    $('avv-trial-text').textContent = `${isTrial(c) ? 'Teste em andamento' : 'Sem teste ativo'} · ${until(c.trial_expira || c.config?.teste_gratis_ate)}`;
+    const identity=$('avv-trial-identificacao');
+    if(identity)identity.textContent = 'Login: '+(c.admin_login_email||'não vinculado')+' · Asaas: '+(c.asaas_customer_id||'não vinculado')+(c.ativo===false?' · Empresa inativa (o teste habilita o acesso temporário)':'');
+    [...$('avv-editor').querySelectorAll('[data-avv-days]')].forEach(b=>b.disabled=!linkedTrial(c)||isTrial(c));
+    $('avv-end-trial').disabled=!linkedTrial(c)||!isTrial(c);
     $('avv-tags').innerHTML = `<span class="avv-chip ${allowed(c) ? '' : 'off'}">${allowed(c) ? 'Acesso permitido' : 'Acesso bloqueado'}</span><span class="avv-chip ${c.config?.agente_ativo ? '' : 'off'}">Robô ${c.config?.agente_ativo ? 'habilitado' : 'desabilitado'}</span>`;
     $('avv-meta').textContent='Ainda não há conexão oficial com a Meta. A página WhatsApp do CRM Vendas está pronta para receber essa integração.';
     $('avv-credit-balance').textContent=brl(c.saldo_alocado_reais);
@@ -129,9 +178,9 @@
   });
   $('avv-editor').addEventListener('click',e=>{
     const button=e.target.closest('[data-avv-days]');
-    if (button) change('teste', {dias:Number(button.dataset.avvDays)});
+    if (button) runTrial('iniciar',Number(button.dataset.avvDays));
   });
-  $('avv-end-trial').addEventListener('click',()=>change('encerrar_teste',{},'Encerrar agora o teste gratuito desta empresa?'));
+  $('avv-end-trial').addEventListener('click',()=>runTrial('encerrar'));
   $('avv-prompt-form').addEventListener('submit',e=>{e.preventDefault();change('prompt', {prompt_sistema:$('avv-prompt').value,agente_ativo:$('avv-agent').checked});});
   const nav = document.querySelector('.nav-link[data-section="crm-vendas"]');
   nav?.addEventListener('click',()=>{if (!companies.length) reload();});
