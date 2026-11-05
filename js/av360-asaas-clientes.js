@@ -40,7 +40,9 @@
       const isLinked=c.status_integracao==='VINCULADO';
       const mayLink=c.status_integracao==='APTO_PARA_VINCULAR'&&c.possivel_empresa_id;
       const status=isLinked?'Vinculado ao CRM: '+String(c.empresa_nome||'empresa')+(c.empresa_ativa===false?' (inativa)':''):mayLink?'Cadastro correspondente: '+String(c.possivel_empresa_nome||'empresa'):'Aguardando cadastro e conferência no CRM';
-      const action=isLinked?'<button type="button" class="btn btn-secondary btn-small" data-open="'+safe(c.empresa_id)+'">Abrir gestão</button>':
+      const canApprove=isLinked&&c.empresa_ativa===false&&c.cadastro_fiscal_confirmado===true&&c.admin_confirmado===true;
+      const action=isLinked?'<button type="button" class="btn btn-secondary btn-small" data-open="'+safe(c.empresa_id)+'">Abrir gestão</button>'+
+        (canApprove?' <button type="button" class="btn btn-primary btn-small" data-approve="'+safe(c.empresa_id)+'">Aprovar empresa</button>':''):
         mayLink?'<button type="button" class="btn btn-primary btn-small" data-link="'+safe(c.asaas_customer_id)+'">Conferir e vincular</button>':'<small>Sem vínculo elegível</small>';
       return '<tr><td><strong>'+safe(c.nome||'Cliente sem nome')+'</strong><small>'+safe(c.email)+'</small><small>'+safe(c.asaas_customer_id)+'</small></td>'+
        '<td>'+safe(c.documento||'Não informado')+'</td><td data-state="'+safe(c.status_integracao)+'">'+safe(status)+
@@ -75,9 +77,26 @@
     }catch(e){notify(e.message||'Erro na vinculação.',true);}
     finally{running=false;el('av360-asaas-refresh').disabled=false;await refresh();el('avv-refresh')?.click();}
   }
+  async function approveCompany(c){
+    if(running||!c||c.empresa_ativa!==false||c.cadastro_fiscal_confirmado!==true||c.admin_confirmado!==true)return;
+    if(!window.confirm('Aprovar o cadastro da empresa '+c.empresa_nome+'? O acesso ao CRM continuará dependendo de teste grátis válido ou assinatura em dia.'))return;
+    running=true;el('av360-asaas-refresh').disabled=true;notify('Aprovando cadastro fiscal e administrador...');
+    let success=false;
+    try{
+      const response=await fetch('/api/vendas/admin',{method:'POST',headers:{Authorization:'Bearer '+await token(),'Content-Type':'application/json'},credentials:'same-origin',cache:'no-store',
+      body:JSON.stringify({acao:'aprovar_empresa',empresa_id:c.empresa_id,confirmacao:'APROVAR_EMPRESA'})});
+      const data=await response.json().catch(()=>({ok:false}));
+      if(!response.ok||data.ok!==true)throw Error(data.error||'Aprovação não confirmada.');
+      success=true;notify('Empresa aprovada. Para permitir o login, conceda teste válido ou confirme uma assinatura.');
+    }catch(e){notify(e.message||'Falha de aprovação.',true);}
+    finally{running=false;el('av360-asaas-refresh').disabled=false;}
+    if(success){await refresh();el('avv-refresh')?.click();}
+  }
   el('av360-asaas-refresh').addEventListener('click',refresh);
   el('av360-asaas-busca').addEventListener('input',render);
   el('av360-asaas-rows').addEventListener('click',event=>{
+    const approve=event.target.closest('[data-approve]');
+    if(approve){const company=clients.find(c=>c.empresa_id===approve.dataset.approve);if(company)approveCompany(company);return;}
     const link=event.target.closest('[data-link]');
     if(link){const customer=clients.find(c=>c.asaas_customer_id===link.dataset.link);if(customer)linkCustomer(customer);return;}
     const open=event.target.closest('[data-open]');
