@@ -378,13 +378,15 @@
           <label class="avv-check"><input type="checkbox" id="avv-manual"> Liberação manual (independente do teste)</label>
           <button id="avv-save-policy" class="btn btn-secondary" type="button">Salvar política de acesso</button>
           <p id="avv-trial-text" class="avv-trial-text"></p>
+          <p id="avv-trial-identificacao" class="avv-sub" aria-live="polite">Verificando login e cliente Asaas vinculados...</p>
           <div class="avv-actions">
-            <button data-avv-days="7" class="btn btn-secondary btn-small" type="button">+ 7 dias</button>
-            <button data-avv-days="15" class="btn btn-secondary btn-small" type="button">+ 15 dias</button>
-            <button data-avv-days="30" class="btn btn-secondary btn-small" type="button">+ 30 dias</button>
+            <button data-avv-days="1" class="btn btn-primary btn-small" type="button">Liberar 1 dia</button>
+            <button data-avv-days="7" class="btn btn-secondary btn-small" type="button">Liberar 7 dias</button>
+            <button data-avv-days="15" class="btn btn-secondary btn-small" type="button">Liberar 15 dias</button>
+            <button data-avv-days="30" class="btn btn-secondary btn-small" type="button">Liberar 30 dias</button>
             <button id="avv-end-trial" class="btn btn-secondary btn-small" type="button">Encerrar teste</button>
           </div>
-          <small>O teste começa na liberação e expira automaticamente. Sem contrato válido, o login e os recursos do WhatsApp ficam bloqueados quando o prazo termina.</small>
+          <small>Libere ou encerre o teste pelo Painel AV. O acesso utiliza o e-mail e a senha já vinculados à empresa, com identificação do cliente Asaas. O teste não cria cobrança, nem exige pagamento. O prazo é validado no servidor e expira automaticamente.</small>
         </div>
         <form id="avv-prompt-form" class="avv-block">
           <h4>Prompt do robô de vendas</h4>
@@ -749,7 +751,7 @@ Apresente o catálogo com precisão; confirme antes de fechar pedidos."></textar
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./js/creditos.js?v=20261016-trial-plano"></script>
-  <script src="./js/vendas-admin.js?v=20261105-asaas-painel-v3" defer></script>
+  <script src="./js/vendas-admin.js?v=20261105-teste-painel-v4" defer></script>
 
 
 <script id="av-central-isolado-v35">
