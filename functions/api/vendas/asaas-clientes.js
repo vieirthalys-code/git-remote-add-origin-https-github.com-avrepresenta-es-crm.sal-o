@@ -2,8 +2,8 @@
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store, max-age=0","X-Content-Type-Options":"nosniff"}});
 export async function onRequestGet({request,env}){
  const token=String(request.headers.get("Authorization")||"");
- if(!/^Bearer\\s+[^\\s]+$/i.test(token))return json({ok:false,error:"SESSAO_ADMIN_OBRIGATORIA"},401);
- const url=String(env.AV_SUPABASE_URL||env.SUPABASE_URL||"").replace(/\\/$/,"");
+ if(!/^Bearer\s+[^\s]+$/i.test(token))return json({ok:false,error:"SESSAO_ADMIN_OBRIGATORIA"},401);
+ const url=String(env.AV_SUPABASE_URL||env.SUPABASE_URL||"").replace(/\/$/,"");
  const key=String(env.AV_SUPABASE_PUBLISHABLE_KEY||env.SUPABASE_ANON_KEY||"");
  if(!url.startsWith("https://")||!key)return json({ok:false,error:"AUTH_NAO_CONFIGURADO"},503);
  let user;
