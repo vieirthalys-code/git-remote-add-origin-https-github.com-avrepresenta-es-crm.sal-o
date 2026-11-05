@@ -89,7 +89,7 @@
         ? 'Teste liberado no painel até '+until(res.teste_ate)+'. O login usa a senha já cadastrada, sem alterar o Asaas.'
         : 'Teste encerrado pelo Painel AV. O acesso está sujeito às demais permissões vigentes.');
     }catch(e){feedback(e.message,true);}
-    finally{buttons.forEach(b=>b.disabled=false);}
+    finally{buttons.forEach(b=>b.disabled=false);renderEditor();}
   }
   function renderList() {
     const q = $('avv-search').value.trim().toLocaleLowerCase('pt-BR');
