@@ -7,8 +7,8 @@
   const safe = x => String(x ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function feedback(message, error=false) { $('avv-status').textContent = message; $('avv-status').classList.toggle('error', error); }
   function until(s) { if (!s) return 'Sem data de teste'; const d = new Date(s); return Number.isNaN(+d) ? 'Data inválida' : d.toLocaleString('pt-BR'); }
-  function isTrial(c) { return Boolean(c?.config?.teste_gratis_ate && new Date(c.config.teste_gratis_ate) > new Date()); }
-  function allowed(c) { const x=c.config||{}; return !x.controle_acesso_ativo || x.acesso_manual_ativo || isTrial(c); }
+  function isTrial(c) { return typeof c?.trial_ativo === 'boolean' ? c.trial_ativo : Boolean(c?.config?.teste_gratis_ate && new Date(c.config.teste_gratis_ate)>new Date()); }
+  function allowed(c) { return typeof c?.acesso_real === 'boolean' ? c.acesso_real : Boolean(c?.config?.acesso_manual_ativo || isTrial(c)); }
   const getSelected = () => companies.find(c => c.id === selected);
   const brl = n => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n||0));
   const precise = n => new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:6}).format(Number(n||0));
@@ -53,7 +53,7 @@
     $('avv-trials').textContent = companies.filter(isTrial).length;
     $('avv-agents').textContent = companies.filter(c => c.config?.agente_ativo).length;
     $('avv-list').innerHTML = matches.length ? matches.map(c => {
-      const status = isTrial(c) ? 'Teste ativo' : c.config?.acesso_manual_ativo ? 'Acesso manual' : c.config?.controle_acesso_ativo ? 'Sem liberação' : 'Acesso não controlado';
+      const status = isTrial(c) ? 'Teste ativo' : allowed(c) ? 'Acesso liberado' : 'Acesso bloqueado';
       return `<button type="button" class="avv-company ${selected === c.id ? 'selected' : ''}" data-avv-id="${safe(c.id)}"><strong>${safe(c.nome || 'Empresa sem nome')}</strong><small>${safe(c.id)}</small><span class="avv-chip ${isTrial(c) ? '' : 'off'}">${status}</span></button>`;
     }).join('') : '<p class="empty">Nenhuma empresa encontrada.</p>';
   }
