@@ -68,7 +68,7 @@
     if(!window.confirm(msg))return;
     running=true;notify('Conferindo a vinculação...');el('av360-asaas-refresh').disabled=true;
     try{
-      const res=await fetch('/api/vendas/admin',{method:'POST',headers:{Authorization:'Bearer '+await token(),'Content-Type':'application/json'},cache:'no-store',credentials:'same-origin',body:JSON.stringify({acao:'vincular_asaas',empresa_id:c.possivel_empresa_id,asaas_customer_id:c.asaas_customer_id,documento_asaas:c.documento,ambiente:'PRODUCAO',confirmacao:'CONFERI_CADASTRO_ASAAS'})});
+      const res=await fetch('/api/vendas/asaas-vincular',{method:'POST',headers:{Authorization:'Bearer '+await token(),'Content-Type':'application/json'},cache:'no-store',credentials:'same-origin',body:JSON.stringify({empresa_id:c.possivel_empresa_id,asaas_customer_id:c.asaas_customer_id,confirmacao:'CONFERI_CADASTRO_ASAAS'})});
       const data=await res.json().catch(()=>({ok:false}));
       if(!res.ok||data.ok!==true)throw Error(data.error||'Não foi possível vincular o cliente.');
       notify('Vínculo registrado. Configure o plano e libere o teste na gestão da empresa.');
