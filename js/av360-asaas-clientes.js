@@ -110,4 +110,6 @@
   });
   document.querySelector('.nav-link[data-section="crm-vendas"]')?.addEventListener('click',()=>{if(!doneInitial)refresh();});
   if(location.hash==='#crm-vendas')setTimeout(refresh,600);
+  // Atualiza a lista enquanto o Admin AV estiver com o módulo aberto.
+  setInterval(()=>{if(!running && document.visibilityState==='visible' && location.hash==='#crm-vendas')refresh();},300000);
 })();
