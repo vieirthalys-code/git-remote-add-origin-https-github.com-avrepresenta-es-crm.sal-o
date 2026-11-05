@@ -162,7 +162,7 @@
   if (!document.getElementById('crm-vendas') || document.querySelector('script[data-av360-asaas]')) return;
   const script = document.createElement('script');
   script.setAttribute('data-av360-asaas','1');
-  script.src = '/js/av360-asaas-clientes.js?v=20261105-approval-v2';
+  script.src = '/js/av360-asaas-clientes.js?v=20261105-autorefresh-v3';
   script.defer = true;
   document.head.appendChild(script);
 })();
