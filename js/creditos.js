@@ -3,8 +3,9 @@
 
   const SUPABASE_URL = 'https://eancpttjrcetmpyqwanw.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_vaPoYvu7bfg7okcczhyetA_L4-dKvZD';
-  const N8N_BASE = 'https://possessivebull-n8n.cloudfy.live/webhook/crm-juridico/admin';
-  const IA_ADMIN_BASE = 'https://possessivebull-n8n.cloudfy.live/webhook/crm-juridico/ia-admin';
+  // Mesma origem: funções próprias no Cloudflare proxiam o n8n com retry seguro no servidor.
+  const N8N_BASE = '/api/juridico/admin';
+  const IA_ADMIN_BASE = '/api/juridico/ia-admin';
   const ALLOWED_ADMIN_EMAIL = 'avrep.tech@gmail.com';
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
@@ -157,7 +158,7 @@
       headers:{'Content-Type':'application/json','Accept':'application/json'},
       body:JSON.stringify({...payload,access_token:session.access_token}),
       cache:'no-store'
-    });
+    }, {retries:0});
     const raw = await response.text();
     let data;
     try { data = JSON.parse(raw); } catch { throw new Error(`Resposta inválida do n8n (${response.status}).`); }
@@ -177,7 +178,7 @@
       },
       body:JSON.stringify({...payload,access_token:session.access_token}),
       cache:'no-store'
-    });
+    }, {retries:0});
     const raw = await response.text();
     let data;
     try { data = JSON.parse(raw); } catch { throw new Error(`Resposta inválida do IA Admin (${response.status}).`); }
