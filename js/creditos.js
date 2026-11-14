@@ -128,9 +128,31 @@
     finally { button.disabled = false; }
   }
 
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  // Chamada ao n8n tolerante a instabilidade: repete em erro de rede, 5xx ou 429.
+  async function n8nFetch(url, options, {retries=2, baseDelay=700}={}) {
+    let lastErr;
+    for (let attempt=0; attempt<=retries; attempt++) {
+      try {
+        const response = await fetch(url, options);
+        if ((response.status>=500 || response.status===429) && attempt<retries) {
+          await sleep(baseDelay*(attempt+1));
+          continue;
+        }
+        return response;
+      } catch (err) {
+        lastErr = err;
+        if (attempt<retries) { await sleep(baseDelay*(attempt+1)); continue; }
+        throw err;
+      }
+    }
+    throw lastErr;
+  }
+
   async function api(path, payload={}) {
     if (!session) throw new Error('Sessão expirada.');
-    const response = await fetch(`${N8N_BASE}/${path}`, {
+    const response = await n8nFetch(`${N8N_BASE}/${path}`, {
       method:'POST',
       headers:{'Content-Type':'application/json','Accept':'application/json'},
       body:JSON.stringify({...payload,access_token:session.access_token}),
@@ -146,7 +168,7 @@
 
   async function iaApi(path, payload={}) {
     if (!session) throw new Error('Sessão expirada.');
-    const response = await fetch(`${IA_ADMIN_BASE}/${path}`, {
+    const response = await n8nFetch(`${IA_ADMIN_BASE}/${path}`, {
       method:'POST',
       headers:{
         'Content-Type':'application/json',
@@ -518,11 +540,19 @@
 
   async function loadEmpresas() {
     $('#empresas-body').innerHTML = '<tr><td colspan="5" class="empty">Carregando...</td></tr>';
-    const data = await api('empresas',{});
-    empresas = Array.isArray(data.empresas) ? data.empresas : [];
-    renderCompanySelectors();
-    renderCompanyLists();
-    renderStats();
+    try {
+      const data = await api('empresas',{});
+      empresas = Array.isArray(data.empresas) ? data.empresas : [];
+      renderCompanySelectors();
+      renderCompanyLists();
+      renderStats();
+    } catch (error) {
+      console.warn('Não foi possível carregar empresas:', error);
+      empresas = [];
+      renderCompanySelectors();
+      renderStats();
+      $('#empresas-body').innerHTML = '<tr><td colspan="5" class="empty">Não foi possível carregar agora. <button type="button" class="btn btn-small" data-action="retry-empresas">Tentar novamente</button></td></tr>';
+    }
   }
 
   function normalizeAccessRows(data) {
@@ -1233,6 +1263,7 @@
         if(b.dataset.action==='trial-end') endTrialById(b.dataset.id);
         if(b.dataset.action==='delete-company') openDeleteCompany(b.dataset.id);
         if(b.dataset.action==='delete-saas-company') openDeleteSaasCompany(b.dataset.id);
+        if(b.dataset.action==='retry-empresas') loadEmpresas();
         return;
       }
       const asaasAction=e.target.closest('[data-asaas-action]');
@@ -1324,8 +1355,7 @@
   }
 
   async function bootData() {
-    const results = await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true}),loadContracts({silent:true}),loadAsaasSubscriptions({silent:true})]);
-    if (results[0].status === 'rejected') throw results[0].reason;
+    await Promise.allSettled([loadEmpresas(),loadPrompts(),loadTrialAccess({silent:true}),loadContracts({silent:true}),loadAsaasSubscriptions({silent:true})]);
 
     const initial=location.hash.replace('#','');
     if(initial && $('#'+initial)) showSection(initial);
