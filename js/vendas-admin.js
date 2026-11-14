@@ -111,7 +111,7 @@
     $('avv-manual').checked = Boolean(c.config?.acesso_manual_ativo);
     $('avv-agent').checked = Boolean(c.config?.agente_ativo);
     $('avv-prompt').value = String(c.config?.prompt_sistema || '');
-    $('avv-count').textContent = `${$('avv-prompt').value.length.toLocaleString('pt-BR')} / 12.000 caracteres`;
+    $('avv-count').textContent = `${$('avv-prompt').value.length.toLocaleString('pt-BR')} caracteres`;
     $('avv-trial-text').textContent = `${isTrial(c) ? 'Teste em andamento' : 'Sem teste ativo'} · ${until(c.trial_expira || c.config?.teste_gratis_ate)}`;
     const identity=$('avv-trial-identificacao');
     if(identity)identity.textContent = 'Login: '+(c.admin_login_email||'não vinculado')+' · Asaas: '+(c.asaas_customer_id||'não vinculado')+(c.ativo===false?' · Empresa inativa (o teste habilita o acesso temporário)':'');
@@ -170,7 +170,7 @@
     }catch(e){setCreditStatus(e.message,true);}
     finally{$('avv-topup').disabled=false;}
   });
-  $('avv-prompt').addEventListener('input',()=>{$('avv-count').textContent=`${$('avv-prompt').value.length.toLocaleString('pt-BR')} / 12.000 caracteres`;});
+  $('avv-prompt').addEventListener('input',()=>{$('avv-count').textContent=`${$('avv-prompt').value.length.toLocaleString('pt-BR')} caracteres`;});
   $('avv-save-policy').addEventListener('click',()=>{
     const active=$('avv-gate').checked, manual=$('avv-manual').checked, c=getSelected();
     const ending = active && !manual && !isTrial(c);
