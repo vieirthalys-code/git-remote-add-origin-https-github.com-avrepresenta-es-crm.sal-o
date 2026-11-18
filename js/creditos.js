@@ -267,9 +267,16 @@
     const product = $('#contract-product');
     if (company) {
       const previous = company.value;
-      company.innerHTML = '<option value="">Selecione o cliente</option>' + (contractData.clientes || []).map(c => `
+      const agendaJuridico = (contractData.clientes || []).map(c => `
         <option value="${escapeHtml(c.empresa_id)}">${escapeHtml(c.nome_fantasia || c.nome || c.empresa_id)} · ${escapeHtml(c.email || 'sem e-mail')}</option>
       `).join('');
+      const vendas = (contractData.vendas || []).map(c => `
+        <option value="vendas:${escapeHtml(c.id)}">${escapeHtml(c.nome || c.id)} · CRM Vendas 360${c.ativo === false ? ' (desativada)' : ''}</option>
+      `).join('');
+      company.innerHTML = '<option value="">Selecione o cliente</option>' +
+        (agendaJuridico ? `<optgroup label="CRM Agenda / Jurídico">${agendaJuridico}</optgroup>` : '') +
+        (vendas ? `<optgroup label="CRM Vendas 360 (vínculo feito na aba CRM Vendas 360)">${vendas}</optgroup>` : '') +
+        (contractData.vendasErro ? '<option value="" disabled>Empresas do CRM Vendas 360 não carregaram — clique em Atualizar contratos</option>' : '');
       if ([...company.options].some(o => o.value === previous)) company.value = previous;
     }
     if (product) {
@@ -316,11 +323,48 @@
     renderAsaasSubscriptions();
   }
 
+  // Empresas do CRM Vendas 360 (tabela própria, cobrança própria): listadas aqui para aparecerem todas as empresas.
+  async function loadVendasCompanies() {
+    try {
+      if (!session) throw new Error('Sessão expirada.');
+      const response = await fetch('/api/vendas/admin', {
+        method:'POST', cache:'no-store',
+        headers:{'Authorization':`Bearer ${session.access_token}`,'Content-Type':'application/json','Accept':'application/json'},
+        body:JSON.stringify({acao:'listar'})
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data || data.ok === false || !Array.isArray(data.empresas)) throw new Error(data?.error || `HTTP ${response.status}`);
+      return {empresas:data.empresas, erro:false};
+    } catch (error) {
+      console.warn('Empresas CRM Vendas 360:', error);
+      return {empresas:[], erro:true};
+    }
+  }
+
+  function openVendasCompany(id) {
+    const company = (contractData.vendas || []).find(c => String(c.id) === String(id));
+    showSection('crm-vendas');
+    history.replaceState(null, '', '#crm-vendas');
+    document.querySelector('.nav-link[data-section="crm-vendas"]')?.click();
+    const customer = selectedAsaasSubscription?.customer_id || '';
+    setTimeout(() => {
+      const search = document.getElementById('avv-search');
+      if (search && company) { search.value = company.nome || ''; search.dispatchEvent(new Event('input')); }
+      const item = [...document.querySelectorAll('#avv-list [data-avv-id]')].find(x => x.dataset.avvId === String(id));
+      item?.click();
+      const asaasSearch = document.getElementById('av360-asaas-busca');
+      if (asaasSearch && customer) { asaasSearch.value = customer; asaasSearch.dispatchEvent(new Event('input')); }
+      document.getElementById('av360-asaas-clientes')?.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 400);
+  }
+
   async function loadContracts({silent=false}={}) {
     if ($('#contracts-body') && !silent) $('#contracts-body').innerHTML = '<tr><td colspan="8" class="empty">Carregando contratos...</td></tr>';
     try {
-      const data = await contractsApi('bootstrap');
+      const [data, vendasLista] = await Promise.all([contractsApi('bootstrap'), loadVendasCompanies()]);
       contractData = {
+        vendas:vendasLista.empresas,
+        vendasErro:vendasLista.erro,
         clientes:Array.isArray(data.clientes) ? data.clientes : [],
         produtos:Array.isArray(data.produtos) ? data.produtos : [],
         contratos:Array.isArray(data.contratos) ? data.contratos : [],
@@ -434,6 +478,11 @@
       quantidade_parcelas_fallback:Number($('#contract-installments-fallback').value || 12),
       dias_tolerancia:Number($('#contract-tolerance').value || 3)
     };
+    if (String(payload.empresa_id).startsWith('vendas:')) {
+      toast('Empresa do CRM Vendas 360: o vínculo com o Asaas é feito na aba CRM Vendas 360, em "Clientes cadastrados no Asaas". Abrindo a empresa lá.');
+      openVendasCompany(String(payload.empresa_id).slice(7));
+      return;
+    }
     if (!payload.asaas_subscription_id) { toast('Primeiro selecione uma assinatura do Asaas.', true); return; }
     if (!payload.empresa_id || !payload.produto_codigo) { toast('Selecione a empresa e o produto que essa assinatura deve liberar.', true); return; }
     button.disabled = true;
