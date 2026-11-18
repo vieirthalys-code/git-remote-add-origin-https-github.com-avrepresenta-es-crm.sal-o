@@ -279,6 +279,7 @@
         (contractData.vendasErro ? '<option value="" disabled>Empresas do CRM Vendas 360 não carregaram — clique em Atualizar contratos</option>' : '');
       if ([...company.options].some(o => o.value === previous)) company.value = previous;
     }
+    syncContractCompanyMode();
     if (product) {
       const previous = product.value;
       product.innerHTML = '<option value="">Selecione o produto</option>' + (contractData.produtos || []).map(p => `
@@ -356,6 +357,18 @@
       if (asaasSearch && customer) { asaasSearch.value = customer; asaasSearch.dispatchEvent(new Event('input')); }
       document.getElementById('av360-asaas-clientes')?.scrollIntoView({behavior:'smooth', block:'start'});
     }, 400);
+  }
+
+  // Empresa do CRM Vendas 360: sem produto da Agenda; o botão leva para a aba CRM Vendas 360.
+  function syncContractCompanyMode() {
+    const isVendas = String($('#contract-company')?.value || '').startsWith('vendas:');
+    const product = $('#contract-product'), button = $('#contract-import-btn');
+    if (!product || !button) return;
+    product.required = !isVendas;
+    product.disabled = isVendas;
+    if (!button.dataset.label) button.dataset.label = button.textContent;
+    button.textContent = isVendas ? 'Abrir na aba CRM Vendas 360' : button.dataset.label;
+    button.disabled = isVendas ? false : !selectedAsaasSubscription;
   }
 
   async function loadContracts({silent=false}={}) {
@@ -450,6 +463,7 @@
     if ($('#contract-import-btn')) $('#contract-import-btn').disabled = true;
     const summary = $('#asaas-selected-summary');
     if (summary) summary.innerHTML = '<span>Nenhuma assinatura selecionada.</span><strong>Escolha “Vincular” em uma assinatura acima.</strong>';
+    syncContractCompanyMode();
   }
 
   function selectAsaasSubscription(id) {
@@ -1283,6 +1297,7 @@
       await loadAsaasSubscriptions(); button.disabled=false; button.textContent=previous;
     });
     $('#contract-form').addEventListener('submit',importAsaasContract);
+    $('#contract-company')?.addEventListener('change',syncContractCompanyMode);
     $('#contract-cancel-close').addEventListener('click',closeContractCancel);
     $('#contract-cancel-back').addEventListener('click',closeContractCancel);
     $('#contract-cancel-confirm').addEventListener('click',confirmContractCancel);
